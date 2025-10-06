@@ -1,60 +1,59 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 
-	"cloud-storage/services/user_service/config"
-	"cloud-storage/services/user_service/internal/api"
-	"cloud-storage/services/user_service/internal/database"
-	"cloud-storage/services/user_service/internal/model"
-	"cloud-storage/services/user_service/internal/service"
-	"cloud-storage/services/user_service/internal/utils"
-	pb "cloud-storage/services/user_service/proto"
+	"cloud-storage-user-service/config"
+	"cloud-storage-user-service/internal/api"
+	"cloud-storage-user-service/internal/database"
+	"cloud-storage-user-service/internal/model"
+	"cloud-storage-user-service/internal/service"
+	"cloud-storage-user-service/proto"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
 	// 加载配置
-	config.LoadConfig()
-
-	// 设置JWT密钥
-	utils.SetSecret([]byte(config.AppConfig.JWT.Secret))
-	utils.InitLogger("", "")
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
 	// 初始化数据库
-	db, err := database.NewDB(config.AppConfig)
+	db, err := database.NewDB(cfg)
 	if err != nil {
-		utils.Error("初始化数据库失败: %v", err)
-		log.Fatalf("初始化数据库失败: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// 初始化用户DAO
+	// 自动迁移 User 模型
+	if err := db.AutoMigrate(&model.User{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+
+	// 初始化 UserDAO
 	userDAO := model.NewUserDAO(db.DB)
 
-	// 初始化用户服务
-	userService := service.NewUserService(userDAO)
+	// 初始化 UserService
+	userService := service.NewUserService(userDAO, cfg)
 
-	// 创建gRPC服务端，不添加JWT拦截器（由网关统一处理鉴权）
+	// 初始化 gRPC 服务端
 	grpcServer := grpc.NewServer()
-
-	// 注册用户服务
-	pb.RegisterUserServiceServer(grpcServer, api.NewUserServiceServer(userService))
+	userServer := api.NewUserServiceServer(userService)
+	proto.RegisterUserServiceServer(grpcServer, userServer)
 
 	// 监听端口
-	lis, err := net.Listen("tcp", ":"+config.AppConfig.Server.Port)
+	lis, err := net.Listen("tcp", ":"+cfg.Server.Port)
 	if err != nil {
-		utils.Error("监听端口失败: %v", err)
-		log.Fatalf("监听端口失败: %v", err)
+		log.Fatalf("Failed to listen on port %s: %v", cfg.Server.Port, err)
 	}
 
-	utils.Info("用户服务启动成功，监听端口: %s", config.AppConfig.Server.Port)
-	log.Printf("用户服务启动成功，监听端口: %s", config.AppConfig.Server.Port)
-
-	// 启动gRPC服务
+	fmt.Printf("User service is running on port %s\n", cfg.Server.Port)
+	
+	// 启动 gRPC 服务
 	if err := grpcServer.Serve(lis); err != nil {
-		utils.Error("启动gRPC服务失败: %v", err)
-		log.Fatalf("启动gRPC服务失败: %v", err)
+		log.Fatalf("Failed to serve gRPC: %v", err)
 	}
 }

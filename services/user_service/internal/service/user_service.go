@@ -1,139 +1,206 @@
 package service
 
 import (
-	"context"
-	"errors"
+	"crypto/md5"
+	"fmt"
+	"time"
 
-	"cloud-storage/services/user_service/internal/model"
-	"cloud-storage/services/user_service/internal/utils"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	"cloud-storage-user-service/config"
+	"cloud-storage-user-service/internal/model"
+	"cloud-storage-user-service/internal/types"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// UserService 用户服务结构
 type UserService struct {
 	userDAO model.UserDAO
+	cfg     *config.Config
 }
 
-// NewUserService 创建新的用户服务实例
-func NewUserService(userDAO model.UserDAO) *UserService {
+func NewUserService(dao model.UserDAO, cfg *config.Config) *UserService {
 	return &UserService{
-		userDAO: userDAO,
+		userDAO: dao,
+		cfg:     cfg,
 	}
 }
 
-// Register 用户注册
-func (s *UserService) Register(ctx context.Context, username, email, password string) (*model.User, error) {
-	// 检查密码强度
-	if len(password) < 6 {
-		return nil, errors.New("密码长度不能少于6位")
-	}
-
-	// 密码加密
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func (s *UserService) Register(req *types.RegisterRequest) (*types.RegisterResponse, error) {
+	// 检查用户是否已存在
+	existingUser, err := s.userDAO.GetByUsername(req.Username)
 	if err != nil {
-		utils.Error("密码加密失败: %v", err)
-		return nil, errors.New("服务器内部错误")
+		return nil, fmt.Errorf("查询用户时出错: %v", err)
+	}
+	
+	if existingUser != nil {
+		return &types.RegisterResponse{
+			Success: false,
+			Message: "用户名已存在",
+		}, nil
 	}
 
-	// 创建用户对象
+	// 创建新用户
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(req.Password)))
 	user := &model.User{
-		Username: username,
-		Email:    email,
-		Password: string(hashedPassword),
+		Username: req.Username,
+		Password: hash,
+		Email:    req.Email,
 	}
 
-	// 保存到数据库
 	if err := s.userDAO.CreateUser(user); err != nil {
-		// 检查是否是唯一性约束违反错误
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return nil, errors.New("用户已存在")
-		}
-		utils.Error("创建用户失败: %v", err)
-		return nil, errors.New("服务器内部错误")
+		return &types.RegisterResponse{
+			Success: false,
+			Message: "注册失败: " + err.Error(),
+		}, nil
 	}
 
-	// 清除密码字段，避免返回给客户端
-	user.Password = ""
-
-	return user, nil
+	return &types.RegisterResponse{
+		Success: true,
+		Message: "注册成功",
+		User: &types.UserInfo{
+			ID:         user.ID,
+			Username:   user.Username,
+			Avatar:     user.Avatar,
+			UsedSpace:  user.UsedSpace,
+			TotalSpace: user.TotalSpace,
+		},
+	}, nil
 }
 
-// Login 用户登录
-func (s *UserService) Login(ctx context.Context, email, password string) (string, *model.User, error) {
-	// 根据邮箱查找用户
-	user, err := s.userDAO.GetUserByEmail(email)
+func (s *UserService) Login(req *types.LoginRequest) (*types.LoginResponse, error) {
+	// 获取用户信息
+	user, err := s.userDAO.GetByUsername(req.Username)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", nil, errors.New("用户不存在")
-		}
-		utils.Error("获取用户失败: %v", err)
-		return "", nil, errors.New("服务器内部错误")
+		return &types.LoginResponse{
+			Success: false,
+			Message: "数据库查询错误: " + err.Error(),
+		}, nil
+	}
+
+	if user == nil {
+		return &types.LoginResponse{
+			Success: false,
+			Message: "用户名或密码错误",
+		}, nil
 	}
 
 	// 验证密码
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return "", nil, errors.New("密码错误")
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(req.Password)))
+	if user.Password != hash {
+		return &types.LoginResponse{
+			Success: false,
+			Message: "用户名或密码错误",
+		}, nil
 	}
 
 	// 生成JWT token
-	token, err := utils.GenerateToken(user.ID, user.Username)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":  user.ID,
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // 24小时过期
+	})
+
+	tokenString, err := token.SignedString([]byte(s.cfg.JWT.Secret))
 	if err != nil {
-		utils.Error("生成token失败: %v", err)
-		return "", nil, errors.New("服务器内部错误")
+		return &types.LoginResponse{
+			Success: false,
+			Message: "生成token失败: " + err.Error(),
+		}, nil
 	}
 
-	// 清除密码字段，避免返回给客户端
-	user.Password = ""
-
-	return token, user, nil
+	return &types.LoginResponse{
+		Success: true,
+		Message: "登录成功",
+		UserID:  user.ID,
+		Token:   tokenString,
+	}, nil
 }
 
-// GetUserByID 根据ID获取用户信息
-func (s *UserService) GetUserByID(ctx context.Context, userID uint) (*model.User, error) {
-	user, err := s.userDAO.GetUserByID(userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
-		}
-		utils.Error("获取用户失败: %v", err)
-		return nil, errors.New("服务器内部错误")
-	}
-
-	// 清除密码字段，避免返回给客户端
-	user.Password = ""
-
-	return user, nil
-}
-
-// UpdateUser 更新用户信息
-func (s *UserService) UpdateUser(ctx context.Context, userID uint, username, email string) (*model.User, error) {
+func (s *UserService) GetUserInfo(req *types.GetUserInfoRequest) (*types.GetUserInfoResponse, error) {
 	// 获取用户信息
-	user, err := s.userDAO.GetUserByID(userID)
+	user, err := s.userDAO.GetByID(req.ID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
-		}
-		utils.Error("获取用户失败: %v", err)
-		return nil, errors.New("服务器内部错误")
+		return nil, fmt.Errorf("数据库查询错误: %v", err)
 	}
 
-	// 更新用户信息
-	user.Username = username
-	user.Email = email
+	if user == nil {
+		return nil, fmt.Errorf("用户不存在")
+	}
 
-	// 保存到数据库
+	return &types.GetUserInfoResponse{
+		User: &types.UserInfo{
+			ID:         user.ID,
+			Username:   user.Username,
+			Avatar:     user.Avatar,
+			UsedSpace:  user.UsedSpace,
+			TotalSpace: user.TotalSpace,
+		},
+	}, nil
+}
+
+func (s *UserService) UpdateUser(req *types.UpdateUserRequest) error {
+	// 获取用户信息
+	user, err := s.userDAO.GetByID(req.ID)
+	if err != nil {
+		return fmt.Errorf("数据库查询错误: %v", err)
+	}
+
+	if user == nil {
+		return fmt.Errorf("用户不存在")
+	}
+
+	// 更新用户头像
+	user.Avatar = req.Avatar
+
+	// 保存更新
 	if err := s.userDAO.UpdateUser(user); err != nil {
-		// 检查是否是唯一性约束违反错误
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return nil, errors.New("邮箱已被使用")
-		}
-		utils.Error("更新用户失败: %v", err)
-		return nil, errors.New("服务器内部错误")
+		return fmt.Errorf("更新用户信息失败: %v", err)
 	}
 
-	// 清除密码字段，避免返回给客户端
-	user.Password = ""
+	return nil
+}
 
-	return user, nil
+func (s *UserService) UpdateCapacity(req *types.UpdateCapacityRequest) error {
+	// 获取用户信息
+	user, err := s.userDAO.GetByID(req.UserID)
+	if err != nil {
+		return fmt.Errorf("数据库查询错误: %v", err)
+	}
+
+	if user == nil {
+		return fmt.Errorf("用户不存在")
+	}
+
+	// 更新用户容量
+	if err := s.userDAO.UpdateCapacity(req.UserID, req.NewTotal); err != nil {
+		return fmt.Errorf("更新用户容量失败: %v", err)
+	}
+
+	return nil
+}
+
+func (s *UserService) CheckCapacity(req *types.CheckCapacityRequest) (*types.CheckCapacityResponse, error) {
+	// 获取用户信息
+	user, err := s.userDAO.GetByID(req.UserID)
+	if err != nil {
+		return &types.CheckCapacityResponse{
+			IsEnough: false,
+		}, fmt.Errorf("数据库查询错误: %v", err)
+	}
+
+	if user == nil {
+		return &types.CheckCapacityResponse{
+			IsEnough: false,
+		}, fmt.Errorf("用户不存在")
+	}
+
+	// 检查容量是否足够
+	usedSpace := user.UsedSpace
+	totalSpace := user.TotalSpace
+	availableSpace := totalSpace - usedSpace
+
+	isEnough := availableSpace >= req.FileSize
+
+	return &types.CheckCapacityResponse{
+		IsEnough: isEnough,
+	}, nil
 }

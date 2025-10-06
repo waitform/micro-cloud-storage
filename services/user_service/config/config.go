@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -32,6 +31,9 @@ type RedisConfig struct {
 	Password string `yaml:"password"`
 	DB       int    `yaml:"db"`
 }
+type UserConfig struct {
+	DefaultTotalSpace int64 `yaml:"default_total_space"` // 单位：字节
+}
 
 // Config 应用配置结构
 type Config struct {
@@ -39,23 +41,22 @@ type Config struct {
 	JWT      JWTConfig      `yaml:"jwt"`
 	Database DatabaseConfig `yaml:"database"`
 	Redis    RedisConfig    `yaml:"redis"`
+	User     UserConfig     `yaml:"user"`
 }
 
-// AppConfig 全局配置变量
-var AppConfig *Config
-
 // LoadConfig 加载配置
-func LoadConfig() {
+func LoadConfig() (*Config, error) {
 	// 读取配置文件
 	data, err := os.ReadFile("config/config.yaml")
 	if err != nil {
-		log.Fatalf("读取配置文件失败: %v", err)
+		return nil, err
 	}
 
 	// 解析YAML配置
-	AppConfig = &Config{}
-	err = yaml.Unmarshal(data, AppConfig)
+	config := &Config{}
+	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		log.Fatalf("解析配置文件失败: %v", err)
+		return nil, err
 	}
+	return config, nil
 }

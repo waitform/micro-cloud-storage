@@ -1,17 +1,20 @@
 server:
-  port: "50051"
+  port: "35002"
 
 jwt:
   secret: "cloud-storage-user-service-secret-key"
 
 database:
-  host: "localhost"
-  port: 3306
-  user: "file_service"
-  password: "file_password"
-  name: "file_db"
+  host: localhost
+  port: 3307
+  user: cloud-storage
+  password: cloud-storage
+  name: cloud-storage
 
 redis:
   addr: "localhost:6379"
   password: ""
   db: 0
+
+user:
+  default_total_space: 10737418240

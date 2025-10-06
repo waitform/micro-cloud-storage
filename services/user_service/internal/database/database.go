@@ -1,10 +1,10 @@
 package database
 
 import (
+	"cloud-storage-user-service/config"
 	"fmt"
 	"time"
 
-	"cloud-storage/services/user_service/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -43,9 +43,9 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	}
 
 	// 设置连接池参数
-	sqlDB.SetMaxIdleConns(10)                 // 空闲连接池中连接的最大数量
-	sqlDB.SetMaxOpenConns(100)                // 打开数据库连接的最大数量
-	sqlDB.SetConnMaxLifetime(time.Hour)       // 连接可复用的最大时间
+	sqlDB.SetMaxIdleConns(10)           // 空闲连接池中连接的最大数量
+	sqlDB.SetMaxOpenConns(100)          // 打开数据库连接的最大数量
+	sqlDB.SetConnMaxLifetime(time.Hour) // 连接可复用的最大时间
 
 	return &DB{db}, nil
 }

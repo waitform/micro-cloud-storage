@@ -2,21 +2,24 @@ package api
 
 import (
 	"context"
+	"time"
 
-	"cloud-storage/services/user_service/internal/service"
-	"cloud-storage/services/user_service/internal/utils"
-	pb "cloud-storage/services/user_service/proto"
+	"cloud-storage-user-service/internal/service"
+	"cloud-storage-user-service/internal/types"
+	pb "cloud-storage-user-service/proto"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-// UserServiceServer 用户服务gRPC服务端
+// UserServiceServer 实现proto中定义的UserServiceServer接口
 type UserServiceServer struct {
 	pb.UnimplementedUserServiceServer
 	userService *service.UserService
 }
 
-// NewUserServiceServer 创建新的用户服务gRPC服务端实例
-func NewUserServiceServer(userService *service.UserService) pb.UserServiceServer {
+// NewUserServiceServer 创建UserServiceServer实例
+func NewUserServiceServer(userService *service.UserService) *UserServiceServer {
 	return &UserServiceServer{
 		userService: userService,
 	}
@@ -24,101 +27,162 @@ func NewUserServiceServer(userService *service.UserService) pb.UserServiceServer
 
 // Register 用户注册
 func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	utils.Info("开始注册用户: %s", req.Username)
-	user, err := s.userService.Register(ctx, req.Username, req.Email, req.Password)
-	if err != nil {
-		utils.Error("注册用户失败: %s, 错误: %v", req.Username, err)
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: err.Error(),
-		}, nil
+	// 转换请求参数
+	registerReq := &types.RegisterRequest{
+		Username: req.Username,
+		Password: req.Password,
+		Email:    req.Email,
 	}
 
-	utils.Info("用户注册成功: %s", req.Username)
+	// 调用服务层
+	resp, err := s.userService.Register(registerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换响应参数
+	var user *pb.User
+	if resp.User != nil {
+		user = &pb.User{
+			Id:         resp.User.ID,
+			Username:   resp.User.Username,
+			Avatar:     resp.User.Avatar,
+			TotalSpace: resp.User.TotalSpace,
+			UsedSpace:  resp.User.UsedSpace,
+			CreatedAt:  time.Now().Format(time.RFC3339),
+			UpdatedAt:  time.Now().Format(time.RFC3339),
+		}
+	}
+
 	return &pb.RegisterResponse{
-		Success: true,
-		Message: "注册成功",
-		User: &pb.User{
-			Id:        uint64(user.ID),
-			Username:  user.Username,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt.String(),
-			UpdatedAt: user.UpdatedAt.String(),
-		},
+		Success: resp.Success,
+		Message: resp.Message,
+		User:    user,
 	}, nil
 }
 
 // Login 用户登录
 func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	utils.Info("用户尝试登录: %s", req.Email)
-	token, user, err := s.userService.Login(ctx, req.Email, req.Password)
-	if err != nil {
-		utils.Error("用户登录失败: %s, 错误: %v", req.Email, err)
-		return &pb.LoginResponse{
-			Success: false,
-			Message: err.Error(),
-		}, nil
+	// 转换请求参数
+	loginReq := &types.LoginRequest{
+		Username: req.Username,
+		Password: req.Password,
 	}
 
-	utils.Info("用户登录成功: %s", req.Email)
+	// 调用服务层
+	resp, err := s.userService.Login(loginReq)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.LoginResponse{
-		Success: true,
-		Message: "登录成功",
-		Token:   token,
-		User: &pb.User{
-			Id:        uint64(user.ID),
-			Username:  user.Username,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt.String(),
-			UpdatedAt: user.UpdatedAt.String(),
-		},
+		Success: resp.Success,
+		Message: resp.Message,
+		UserId:  resp.UserID,
+		Token:   resp.Token,
 	}, nil
 }
 
-// GetUser 获取用户信息
-func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	// 从请求上下文中获取用户ID（由网关解析JWT后传递）
-	userID := req.UserId
-	
-	utils.Info("获取用户信息，用户ID: %d", userID)
-	user, err := s.userService.GetUserByID(ctx, uint(userID))
+// GetUserInfo 获取用户信息
+func (s *UserServiceServer) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest) (*pb.GetUserInfoResponse, error) {
+	// 转换请求参数
+	getUserInfoReq := &types.GetUserInfoRequest{
+		ID: req.UserId,
+	}
+
+	// 调用服务层
+	resp, err := s.userService.GetUserInfo(getUserInfoReq)
 	if err != nil {
-		utils.Error("获取用户信息失败，用户ID: %d, 错误: %v", userID, err)
-		return &pb.GetUserResponse{
+		return nil, err
+	}
+
+	// 转换响应参数
+	var user *pb.User
+	if resp.User != nil {
+		user = &pb.User{
+			Id:         resp.User.ID,
+			Username:   resp.User.Username,
+			Avatar:     resp.User.Avatar,
+			TotalSpace: resp.User.TotalSpace,
+			UsedSpace:  resp.User.UsedSpace,
+			CreatedAt:  time.Now().Format(time.RFC3339),
+			UpdatedAt:  time.Now().Format(time.RFC3339),
+		}
+	}
+
+	return &pb.GetUserInfoResponse{
+		User: user,
+	}, nil
+}
+
+// UpdateUserInfo 更新用户信息
+func (s *UserServiceServer) UpdateUserInfo(ctx context.Context, req *pb.UpdateUserInfoRequest) (*pb.UpdateUserInfoResponse, error) {
+	// 转换请求参数
+	updateUserReq := &types.UpdateUserRequest{
+		ID:     req.UserId,
+		Avatar: req.Avatar,
+	}
+
+	// 调用服务层
+	err := s.userService.UpdateUser(updateUserReq)
+	if err != nil {
+		return &pb.UpdateUserInfoResponse{
 			Success: false,
 			Message: err.Error(),
 		}, nil
 	}
 
-	utils.Info("获取用户信息成功，用户ID: %d", userID)
-	return &pb.GetUserResponse{
+	return &pb.UpdateUserInfoResponse{
 		Success: true,
-		Message: "获取用户信息成功",
-		User: &pb.User{
-			Id:        uint64(user.ID),
-			Username:  user.Username,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt.String(),
-			UpdatedAt: user.UpdatedAt.String(),
-		},
+		Message: "更新成功",
 	}, nil
 }
 
-// UpdateUser 更新用户信息
-func (s *UserServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	// 注意：UpdateUser操作需要在网关层确保只能更新自己的信息
-	// 或者在请求中添加用户ID字段以指定要更新的用户
-	utils.Info("更新用户信息")
-	
-	// 这里我们假设网关会在上下文中传递用户ID
-	// 由于.proto文件中没有定义userId字段，我们需要修改.proto文件或者在网关层处理
-	// 为了保持.proto文件不变，我们记录此问题，实际使用时需要在网关层处理
-	
-	utils.Warn("UpdateUser方法缺少用户ID参数，需要在网关层处理用户身份验证")
-	
-	// 暂时返回错误，直到确定实现方式
-	return &pb.UpdateUserResponse{
-		Success: false,
-		Message: "更新用户信息功能暂未实现",
+// UpdateUsage 更新用户存储使用量
+func (s *UserServiceServer) UpdateUsage(ctx context.Context, req *pb.UpdateUsageRequest) (*pb.UpdateUsageResponse, error) {
+	// 这个方法在服务层没有实现，暂时返回未实现错误
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUsage not implemented")
+}
+
+// UpdateCapacity 更新用户总容量
+func (s *UserServiceServer) UpdateCapacity(ctx context.Context, req *pb.UpdateCapacityRequest) (*pb.UpdateCapacityResponse, error) {
+	// 转换请求参数
+	updateCapacityReq := &types.UpdateCapacityRequest{
+		UserID:   req.UserId,
+		NewTotal: req.NewTotalSpace,
+	}
+
+	// 调用服务层
+	err := s.userService.UpdateCapacity(updateCapacityReq)
+	if err != nil {
+		return &pb.UpdateCapacityResponse{
+			Success: false,
+			Message: err.Error(),
+		}, nil
+	}
+
+	return &pb.UpdateCapacityResponse{
+		Success:    true,
+		Message:    "更新成功",
+		TotalSpace: req.NewTotalSpace,
+	}, nil
+}
+
+// CheckCapacity 检查用户容量是否足够
+func (s *UserServiceServer) CheckCapacity(ctx context.Context, req *pb.CheckCapacityRequest) (*pb.CheckCapacityResponse, error) {
+	// 转换请求参数
+	checkCapacityReq := &types.CheckCapacityRequest{
+		UserID:   req.UserId,
+		FileSize: req.FileSize,
+	}
+
+	// 调用服务层
+	resp, err := s.userService.CheckCapacity(checkCapacityReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CheckCapacityResponse{
+		Enough: resp.IsEnough,
 	}, nil
 }
