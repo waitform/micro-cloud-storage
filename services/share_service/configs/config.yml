@@ -1,0 +1,22 @@
+
+
+grpc:
+  port: 35003
+
+database:
+  host: localhost
+  port: 3307
+  user: cloud-storage
+  password: cloud-storage
+  name: cloud-storage
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 1
+
+log:
+  level: INFO
+  path: ./logs
+

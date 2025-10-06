@@ -4,10 +4,11 @@
 // - protoc             v4.23.1
 // source: file.proto
 
-package proto
+package filepb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

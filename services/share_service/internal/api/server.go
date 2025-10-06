@@ -55,12 +55,11 @@ func (s *ShareServer) GetShareInfo(ctx context.Context, req *pb.GetShareInfoRequ
 	}
 
 	info := &pb.ShareInfo{
-		ShareId:   id,
-		FileId:    share.FileID,
-		OwnerId:   share.OwnerID,
-		Password:  share.Password,
-		ExpireAt:  share.ExpireAt.Unix(),
-		CreatedAt: share.CreatedAt.Format(time.RFC3339),
+		ShareId:  id,
+		FileId:   share.FileID,
+		OwnerId:  share.OwnerID,
+		Password: share.Password,
+		ExpireAt: share.ExpireAt.Unix(),
 	}
 	return &pb.GetShareInfoResponse{Info: info}, nil
 }
