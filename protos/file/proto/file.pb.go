@@ -28,8 +28,9 @@ type FileInfo struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-	Md5           string                 `protobuf:"bytes,4,opt,name=md5,proto3" json:"md5,omitempty"`
-	Status        int32                  `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`
+	UserID        int64                  `protobuf:"varint,4,opt,name=userID,proto3" json:"userID,omitempty"`
+	Md5           string                 `protobuf:"bytes,5,opt,name=md5,proto3" json:"md5,omitempty"`
+	Status        int32                  `protobuf:"varint,6,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -85,6 +86,13 @@ func (x *FileInfo) GetSize() int64 {
 	return 0
 }
 
+func (x *FileInfo) GetUserID() int64 {
+	if x != nil {
+		return x.UserID
+	}
+	return 0
+}
+
 func (x *FileInfo) GetMd5() string {
 	if x != nil {
 		return x.Md5
@@ -105,6 +113,7 @@ type InitUploadRequest struct {
 	FileName      string                 `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 	Md5           string                 `protobuf:"bytes,3,opt,name=md5,proto3" json:"md5,omitempty"`
+	UserID        int64                  `protobuf:"varint,4,opt,name=userID,proto3" json:"userID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -158,6 +167,13 @@ func (x *InitUploadRequest) GetMd5() string {
 		return x.Md5
 	}
 	return ""
+}
+
+func (x *InitUploadRequest) GetUserID() int64 {
+	if x != nil {
+		return x.UserID
+	}
+	return 0
 }
 
 // 上传初始化响应
@@ -574,22 +590,112 @@ func (x *GeneratePresignedURLResponse) GetExpireAt() int64 {
 	return 0
 }
 
+type GetFileInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFileInfoRequest) Reset() {
+	*x = GetFileInfoRequest{}
+	mi := &file_file_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFileInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFileInfoRequest) ProtoMessage() {}
+
+func (x *GetFileInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFileInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetFileInfoRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetFileInfoRequest) GetFileId() int64 {
+	if x != nil {
+		return x.FileId
+	}
+	return 0
+}
+
+type GetFileInfoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	File          *FileInfo              `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFileInfoResponse) Reset() {
+	*x = GetFileInfoResponse{}
+	mi := &file_file_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFileInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFileInfoResponse) ProtoMessage() {}
+
+func (x *GetFileInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFileInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetFileInfoResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetFileInfoResponse) GetFile() *FileInfo {
+	if x != nil {
+		return x.File
+	}
+	return nil
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"file.proto\x12\ffile_service\x1a\x1bgoogle/protobuf/empty.proto\"l\n" +
+	"file.proto\x12\ffile_service\x1a\x1bgoogle/protobuf/empty.proto\"\x84\x01\n" +
 	"\bFileInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x10\n" +
-	"\x03md5\x18\x04 \x01(\tR\x03md5\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\x05R\x06status\"V\n" +
+	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x16\n" +
+	"\x06userID\x18\x04 \x01(\x03R\x06userID\x12\x10\n" +
+	"\x03md5\x18\x05 \x01(\tR\x03md5\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\x05R\x06status\"n\n" +
 	"\x11InitUploadRequest\x12\x1b\n" +
 	"\tfile_name\x18\x01 \x01(\tR\bfileName\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x10\n" +
-	"\x03md5\x18\x03 \x01(\tR\x03md5\"@\n" +
+	"\x03md5\x18\x03 \x01(\tR\x03md5\x12\x16\n" +
+	"\x06userID\x18\x04 \x01(\x03R\x06userID\"@\n" +
 	"\x12InitUploadResponse\x12*\n" +
 	"\x04file\x18\x01 \x01(\v2\x16.file_service.FileInfoR\x04file\"s\n" +
 	"\x11UploadPartRequest\x12\x17\n" +
@@ -614,7 +720,11 @@ const file_file_proto_rawDesc = "" +
 	"\x0eexpire_seconds\x18\x02 \x01(\x05R\rexpireSeconds\"M\n" +
 	"\x1cGeneratePresignedURLResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1b\n" +
-	"\texpire_at\x18\x02 \x01(\x03R\bexpireAt2\xf7\x03\n" +
+	"\texpire_at\x18\x02 \x01(\x03R\bexpireAt\"-\n" +
+	"\x12GetFileInfoRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"A\n" +
+	"\x13GetFileInfoResponse\x12*\n" +
+	"\x04file\x18\x01 \x01(\v2\x16.file_service.FileInfoR\x04file2\xcb\x04\n" +
 	"\vFileService\x12O\n" +
 	"\n" +
 	"InitUpload\x12\x1f.file_service.InitUploadRequest\x1a .file_service.InitUploadResponse\x12E\n" +
@@ -624,7 +734,8 @@ const file_file_proto_rawDesc = "" +
 	"\fDownloadPart\x12\x1d.file_service.DownloadRequest\x1a\x1e.file_service.DownloadResponse0\x01\x12A\n" +
 	"\n" +
 	"DeleteFile\x12\x1b.file_service.DeleteRequest\x1a\x16.google.protobuf.Empty\x12m\n" +
-	"\x14GeneratePresignedURL\x12).file_service.GeneratePresignedURLRequest\x1a*.file_service.GeneratePresignedURLResponseB\tZ\a/proto;b\x06proto3"
+	"\x14GeneratePresignedURL\x12).file_service.GeneratePresignedURLRequest\x1a*.file_service.GeneratePresignedURLResponse\x12R\n" +
+	"\vGetFileInfo\x12 .file_service.GetFileInfoRequest\x1a!.file_service.GetFileInfoResponseB\tZ\a/proto;b\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -638,7 +749,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_file_proto_goTypes = []any{
 	(*FileInfo)(nil),                     // 0: file_service.FileInfo
 	(*InitUploadRequest)(nil),            // 1: file_service.InitUploadRequest
@@ -650,27 +761,32 @@ var file_file_proto_goTypes = []any{
 	(*DeleteRequest)(nil),                // 7: file_service.DeleteRequest
 	(*GeneratePresignedURLRequest)(nil),  // 8: file_service.GeneratePresignedURLRequest
 	(*GeneratePresignedURLResponse)(nil), // 9: file_service.GeneratePresignedURLResponse
-	(*emptypb.Empty)(nil),                // 10: google.protobuf.Empty
+	(*GetFileInfoRequest)(nil),           // 10: file_service.GetFileInfoRequest
+	(*GetFileInfoResponse)(nil),          // 11: file_service.GetFileInfoResponse
+	(*emptypb.Empty)(nil),                // 12: google.protobuf.Empty
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: file_service.InitUploadResponse.file:type_name -> file_service.FileInfo
-	1,  // 1: file_service.FileService.InitUpload:input_type -> file_service.InitUploadRequest
-	3,  // 2: file_service.FileService.UploadPart:input_type -> file_service.UploadPartRequest
-	4,  // 3: file_service.FileService.CompleteUpload:input_type -> file_service.CompleteUploadRequest
-	5,  // 4: file_service.FileService.DownloadPart:input_type -> file_service.DownloadRequest
-	7,  // 5: file_service.FileService.DeleteFile:input_type -> file_service.DeleteRequest
-	8,  // 6: file_service.FileService.GeneratePresignedURL:input_type -> file_service.GeneratePresignedURLRequest
-	2,  // 7: file_service.FileService.InitUpload:output_type -> file_service.InitUploadResponse
-	10, // 8: file_service.FileService.UploadPart:output_type -> google.protobuf.Empty
-	10, // 9: file_service.FileService.CompleteUpload:output_type -> google.protobuf.Empty
-	6,  // 10: file_service.FileService.DownloadPart:output_type -> file_service.DownloadResponse
-	10, // 11: file_service.FileService.DeleteFile:output_type -> google.protobuf.Empty
-	9,  // 12: file_service.FileService.GeneratePresignedURL:output_type -> file_service.GeneratePresignedURLResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	0,  // 1: file_service.GetFileInfoResponse.file:type_name -> file_service.FileInfo
+	1,  // 2: file_service.FileService.InitUpload:input_type -> file_service.InitUploadRequest
+	3,  // 3: file_service.FileService.UploadPart:input_type -> file_service.UploadPartRequest
+	4,  // 4: file_service.FileService.CompleteUpload:input_type -> file_service.CompleteUploadRequest
+	5,  // 5: file_service.FileService.DownloadPart:input_type -> file_service.DownloadRequest
+	7,  // 6: file_service.FileService.DeleteFile:input_type -> file_service.DeleteRequest
+	8,  // 7: file_service.FileService.GeneratePresignedURL:input_type -> file_service.GeneratePresignedURLRequest
+	10, // 8: file_service.FileService.GetFileInfo:input_type -> file_service.GetFileInfoRequest
+	2,  // 9: file_service.FileService.InitUpload:output_type -> file_service.InitUploadResponse
+	12, // 10: file_service.FileService.UploadPart:output_type -> google.protobuf.Empty
+	12, // 11: file_service.FileService.CompleteUpload:output_type -> google.protobuf.Empty
+	6,  // 12: file_service.FileService.DownloadPart:output_type -> file_service.DownloadResponse
+	12, // 13: file_service.FileService.DeleteFile:output_type -> google.protobuf.Empty
+	9,  // 14: file_service.FileService.GeneratePresignedURL:output_type -> file_service.GeneratePresignedURLResponse
+	11, // 15: file_service.FileService.GetFileInfo:output_type -> file_service.GetFileInfoResponse
+	9,  // [9:16] is the sub-list for method output_type
+	2,  // [2:9] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -684,7 +800,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -88,7 +88,7 @@ func (s *StorageService) UploadFileDirectly(ctx context.Context, fileName string
 }
 
 // InitUpload 初始化上传
-func (s *StorageService) InitUpload(ctx context.Context, fileName string, size int64, md5 string) (*model.File, error) {
+func (s *StorageService) InitUpload(ctx context.Context, fileName string, size int64, md5 string, userID int64) (*model.File, error) {
 	existedFile, err := s.fileDAO.GetFileByMD5(md5)
 	if err == nil && existedFile != nil {
 		return existedFile, nil
@@ -103,6 +103,7 @@ func (s *StorageService) InitUpload(ctx context.Context, fileName string, size i
 		Md5:        md5,
 		Status:     0, // 上传中
 		CreatedAt:  time.Now(),
+		UserID:     userID,
 	}
 
 	if err := s.fileDAO.CreateFile(file); err != nil {
@@ -417,6 +418,22 @@ func (s *StorageService) uploadPart(ctx context.Context, fileID int64, partNumbe
 
 	return s.fileDAO.SavePart(part)
 }
+
+// GetFileInfo 获取文件信息
+func (s *StorageService) GetFileInfo(ctx context.Context, fileID int64) (*model.File, error) {
+	file, err := s.fileDAO.GetFileByID(fileID)
+	if err != nil {
+		return nil, fmt.Errorf("获取文件信息失败: %v", err)
+	}
+	
+	// 检查文件状态
+	if file.Status != 1 {
+		return nil, fmt.Errorf("文件未完成上传或不可用")
+	}
+	
+	return file, nil
+}
+
 func (s *StorageService) FileDAO() model.FileDAO {
 	return s.fileDAO
 }

@@ -51,7 +51,7 @@ func main() {
 	}
 
 	fmt.Printf("User service is running on port %s\n", cfg.Server.Port)
-	
+
 	// 启动 gRPC 服务
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC: %v", err)

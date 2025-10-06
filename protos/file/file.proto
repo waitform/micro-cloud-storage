@@ -11,8 +11,9 @@ message FileInfo {
   int64 id = 1;
   string name = 2;
   int64 size = 3;
-  string md5 = 4;
-  int32 status = 5;
+  int64 userID = 4;
+  string md5 = 5;
+  int32 status = 6;
 }
 
 // 上传初始化请求
@@ -20,6 +21,7 @@ message InitUploadRequest {
   string file_name = 1;
   int64 size = 2;
   string md5 = 3;
+  int64 userID = 4;
 }
 
 // 上传初始化响应
@@ -67,6 +69,14 @@ message GeneratePresignedURLResponse {
   int64 expire_at = 2; // 过期时间戳
 }
 
+message GetFileInfoRequest {
+  int64 file_id = 1;
+}
+
+message GetFileInfoResponse {
+  FileInfo file = 1;
+}
+
 // 文件服务接口
 service FileService {
   rpc InitUpload(InitUploadRequest) returns (InitUploadResponse);
@@ -75,4 +85,5 @@ service FileService {
   rpc DownloadPart(DownloadRequest) returns (stream DownloadResponse);
   rpc DeleteFile(DeleteRequest) returns (google.protobuf.Empty);
   rpc GeneratePresignedURL(GeneratePresignedURLRequest) returns (GeneratePresignedURLResponse);
+  rpc GetFileInfo(GetFileInfoRequest) returns (GetFileInfoResponse);
 }

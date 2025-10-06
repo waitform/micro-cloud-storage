@@ -14,6 +14,7 @@ type File struct {
 	FileName   string `gorm:"size:255"`
 	Bucket     string `gorm:"size:255"`
 	ObjectName string `gorm:"size:512"` // 最终合并对象名
+	UserID     int64  `gorm:"index"`
 	Size       int64
 	Md5        string
 	Status     int // 0 = uploading, 1 = completed

@@ -1,103 +1,57 @@
 syntax = "proto3";
 
 package share;
-option go_package = "./share";
 
-// 分享记录
-message Share {
-  string id = 1;
-  string file_id = 2;
-  string owner_id = 3;
-  string share_link = 4;
-  string expire_at = 5;
-  bool is_active = 6;
-  string created_at = 7;
-  repeated string shared_with_users = 8; // 特定分享的用户列表
+option go_package = "/proto;sharepb";
+
+// 分享信息结构
+message ShareInfo {
+  string share_id = 1;   // 分享唯一ID
+  int64 file_id = 2;     // 被分享的文件
+  int64 owner_id = 3;   // 文件所有者
+  string password = 4;   // 可选分享密码
+  int64 expire_at = 5;   // 过期时间戳 (秒)
+  string created_at = 6; // 创建时间
 }
 
 // 创建分享请求
 message CreateShareRequest {
-  string file_id = 1;
-  string owner_id = 2;
-  string expire_at = 3;
-  repeated string shared_with_users = 4;
+  int64 file_id = 1;
+  int64 owner_id = 2;
+  string password = 3;   // 可选密码
+  int64 expire_in = 4;   // 过期秒数
 }
 
 // 创建分享响应
 message CreateShareResponse {
-  bool success = 1;
-  string message = 2;
-  Share share = 3;
-}
-
-// 获取分享信息请求
-message GetShareRequest {
   string share_id = 1;
-  string share_link = 2;
+  string share_url = 2;
 }
 
-// 获取分享信息响应
-message GetShareResponse {
-  bool success = 1;
-  string message = 2;
-  Share share = 3;
-}
-
-// 删除分享请求
-message DeleteShareRequest {
+// 获取分享信息
+message GetShareInfoRequest {
   string share_id = 1;
-  string owner_id = 2;
 }
 
-// 删除分享响应
-message DeleteShareResponse {
-  bool success = 1;
-  string message = 2;
+message GetShareInfoResponse {
+  ShareInfo info = 1;
 }
 
-// 列出我的分享请求
-message ListMySharesRequest {
-  string owner_id = 1;
-  int32 page = 2;
-  int32 limit = 3;
-}
-
-// 列出我的分享响应
-message ListMySharesResponse {
-  bool success = 1;
-  string message = 2;
-  repeated Share shares = 3;
-  int32 total = 4;
-}
-
-// 验证访问权限请求
+// 验证访问请求
 message ValidateAccessRequest {
-  string share_link = 1;
-  string user_id = 2; // 如果是登录用户访问
+  string share_id = 1;
+  string password = 2;
 }
 
-// 验证访问权限响应
 message ValidateAccessResponse {
-  bool success = 1;
-  string message = 2;
-  bool has_access = 3;
-  string file_id = 4;
+  bool valid = 1;        // 密码是否正确
+  int64 file_id = 2;     // 返回文件 ID（若验证通过）
+  int64 owner_id = 3;   // 文件所有者
 }
 
-// 分享服务
+// 服务定义
 service ShareService {
-  // 创建分享
   rpc CreateShare(CreateShareRequest) returns (CreateShareResponse);
-  
-  // 获取分享信息
-  rpc GetShare(GetShareRequest) returns (GetShareResponse);
-  
-  // 删除分享
-  rpc DeleteShare(DeleteShareRequest) returns (DeleteShareResponse);
-  
-  // 列出我的分享
-  rpc ListMyShares(ListMySharesRequest) returns (ListMySharesResponse);
-  
-  // 验证访问权限
+  rpc GetShareInfo(GetShareInfoRequest) returns (GetShareInfoResponse);
   rpc ValidateAccess(ValidateAccessRequest) returns (ValidateAccessResponse);
 }

@@ -26,6 +26,7 @@ const (
 	FileService_DownloadPart_FullMethodName         = "/file_service.FileService/DownloadPart"
 	FileService_DeleteFile_FullMethodName           = "/file_service.FileService/DeleteFile"
 	FileService_GeneratePresignedURL_FullMethodName = "/file_service.FileService/GeneratePresignedURL"
+	FileService_GetFileInfo_FullMethodName          = "/file_service.FileService/GetFileInfo"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -40,6 +41,7 @@ type FileServiceClient interface {
 	DownloadPart(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadResponse], error)
 	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GeneratePresignedURL(ctx context.Context, in *GeneratePresignedURLRequest, opts ...grpc.CallOption) (*GeneratePresignedURLResponse, error)
+	GetFileInfo(ctx context.Context, in *GetFileInfoRequest, opts ...grpc.CallOption) (*GetFileInfoResponse, error)
 }
 
 type fileServiceClient struct {
@@ -119,6 +121,16 @@ func (c *fileServiceClient) GeneratePresignedURL(ctx context.Context, in *Genera
 	return out, nil
 }
 
+func (c *fileServiceClient) GetFileInfo(ctx context.Context, in *GetFileInfoRequest, opts ...grpc.CallOption) (*GetFileInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFileInfoResponse)
+	err := c.cc.Invoke(ctx, FileService_GetFileInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -131,6 +143,7 @@ type FileServiceServer interface {
 	DownloadPart(*DownloadRequest, grpc.ServerStreamingServer[DownloadResponse]) error
 	DeleteFile(context.Context, *DeleteRequest) (*emptypb.Empty, error)
 	GeneratePresignedURL(context.Context, *GeneratePresignedURLRequest) (*GeneratePresignedURLResponse, error)
+	GetFileInfo(context.Context, *GetFileInfoRequest) (*GetFileInfoResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -158,6 +171,9 @@ func (UnimplementedFileServiceServer) DeleteFile(context.Context, *DeleteRequest
 }
 func (UnimplementedFileServiceServer) GeneratePresignedURL(context.Context, *GeneratePresignedURLRequest) (*GeneratePresignedURLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GeneratePresignedURL not implemented")
+}
+func (UnimplementedFileServiceServer) GetFileInfo(context.Context, *GetFileInfoRequest) (*GetFileInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFileInfo not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -281,6 +297,24 @@ func _FileService_GeneratePresignedURL_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_GetFileInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFileInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).GetFileInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_GetFileInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).GetFileInfo(ctx, req.(*GetFileInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -307,6 +341,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GeneratePresignedURL",
 			Handler:    _FileService_GeneratePresignedURL_Handler,
+		},
+		{
+			MethodName: "GetFileInfo",
+			Handler:    _FileService_GetFileInfo_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

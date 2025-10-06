@@ -2,8 +2,8 @@ package api
 
 import (
 	"cloud-storage-file-service/internal/service"
-	"context"
 	"cloud-storage-file-service/proto"
+	"context"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -19,7 +19,7 @@ func NewFileServiceServer(storage *service.StorageService) proto.FileServiceServ
 	}
 }
 func (s *FileServiceServer) InitUpload(ctx context.Context, req *proto.InitUploadRequest) (*proto.InitUploadResponse, error) {
-	file, err := s.storage.InitUpload(ctx, req.FileName, req.Size, req.Md5)
+	file, err := s.storage.InitUpload(ctx, req.FileName, req.Size, req.Md5, req.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +28,7 @@ func (s *FileServiceServer) InitUpload(ctx context.Context, req *proto.InitUploa
 		File: &proto.FileInfo{
 			Id:     file.ID,
 			Name:   file.FileName,
+			UserID: file.UserID,
 			Size:   file.Size,
 			Md5:    file.Md5,
 			Status: int32(file.Status),
@@ -61,16 +62,21 @@ func (s *FileServiceServer) DownloadPart(req *proto.DownloadRequest, stream prot
 
 	return stream.Send(resp)
 }
-func (s *FileServiceServer) GetFileInfo(ctx context.Context, fileID int64) (*proto.FileInfo, error) {
-	file, err := s.storage.FileDAO().GetFileByID(fileID)
+func (s *FileServiceServer) GetFileInfo(ctx context.Context, req *proto.GetFileInfoRequest) (*proto.GetFileInfoResponse, error) {
+	file, err := s.storage.GetFileInfo(ctx, req.FileId)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.FileInfo{
-		Id:   file.ID,
-		Name: file.FileName,
-		Size: file.Size,
-		Md5:  file.Md5,
+
+	return &proto.GetFileInfoResponse{
+		File: &proto.FileInfo{
+			Id:     file.ID,
+			Name:   file.FileName,
+			Size:   file.Size,
+			UserID: file.UserID,
+			Md5:    file.Md5,
+			Status: int32(file.Status),
+		},
 	}, nil
 }
 

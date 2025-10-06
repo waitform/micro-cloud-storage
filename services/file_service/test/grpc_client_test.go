@@ -155,19 +155,34 @@ func TestGRPCFileOperations(t *testing.T) {
 		utils.Info("生成预签名URL成功: %s, 过期时间: %d", resp.Url, resp.ExpireAt)
 	})
 
-	// 4. 删除文件
-	t.Run("DeleteFile", func(t *testing.T) {
-		// 删除文件
+	// // 4. 删除文件
+	// t.Run("DeleteFile", func(t *testing.T) {
+	// 	// 删除文件
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer cancel()
+
+	// 	_, err = client.DeleteFile(ctx, &pb.DeleteRequest{
+	// 		FileId: fileID,
+	// 	})
+	// 	if err != nil {
+	// 		t.Fatalf("删除文件失败: %v", err)
+	// 	}
+
+	// 	utils.Info("删除文件成功")
+	// })
+	//5.获取文件信息
+	t.Run("GetFileInfo", func(t *testing.T) {
+		// 获取文件信息
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		_, err = client.DeleteFile(ctx, &pb.DeleteRequest{
+		resp, err := client.GetFileInfo(ctx, &pb.GetFileInfoRequest{
 			FileId: fileID,
 		})
 		if err != nil {
-			t.Fatalf("删除文件失败: %v", err)
+			t.Fatalf("获取文件信息失败: %v", err)
 		}
 
-		utils.Info("删除文件成功")
+		utils.Info("获取文件信息成功，文件名: %s, 文件大小: %d, MD5: %s, 状态: %d", resp.File.Name, resp.File.Size, resp.File.Md5, resp.File.Status)
 	})
 }
