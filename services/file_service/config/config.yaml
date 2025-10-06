@@ -1,0 +1,41 @@
+# 文件服务配置文件
+
+server:
+  port: 8081
+
+grpc:
+  port: 35001
+
+database:
+  host: localhost
+  port: 3307
+  user: cloud-storage
+  password: cloud-storage
+  name: cloud-storage
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 1
+
+storage:
+  path: /var/cloud-storage/files
+  # 分片大小（以字节为单位），默认为5MB，除最后一个分片外，所有分片必须至少为这个大小
+  partSize: 5242880
+
+log:
+  level: INFO
+  path: ./logs
+
+minio:
+  # MinIO服务器地址
+  endpoint: "localhost:9000"
+  # 访问密钥
+  accessKey: "minioadmin"
+  # 秘密密钥
+  secretKey: "minioadmin"
+  # 是否使用SSL
+  useSSL: false
+
+# 注意：全局配置在代码中自动加载，无需在此处显式声明

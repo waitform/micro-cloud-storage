@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package file_service;
+
+option go_package = "/proto;";
+
+import "google/protobuf/empty.proto";
+
+// 文件信息
+message FileInfo {
+  int64 id = 1;
+  string name = 2;
+  int64 size = 3;
+  string md5 = 4;
+  int32 status = 5;
+}
+
+// 上传初始化请求
+message InitUploadRequest {
+  string file_name = 1;
+  int64 size = 2;
+  string md5 = 3;
+}
+
+// 上传初始化响应
+message InitUploadResponse {
+  FileInfo file = 1;
+}
+
+// 分片上传请求
+message UploadPartRequest {
+  int64 file_id = 1;
+  int32 part_number = 2;
+  bytes data = 3;
+  string md5 = 4;
+}
+
+// 上传完成请求
+message CompleteUploadRequest {
+  int64 file_id = 1;
+}
+
+// 下载请求
+message DownloadRequest {
+  int64 file_id = 1;
+  int32 part_number = 2;
+}
+
+
+message DownloadResponse {
+  bytes data = 1;
+  string md5 = 3;
+}
+
+// 删除请求
+message DeleteRequest {
+  int64 file_id = 1;
+}
+//生成预签名url
+message GeneratePresignedURLRequest {
+  int64 file_id = 1;
+  int32 expire_seconds = 2; // 过期时间（秒），默认3600秒
+}
+
+message GeneratePresignedURLResponse {
+  string url = 1;
+  int64 expire_at = 2; // 过期时间戳
+}
+
+// 文件服务接口
+service FileService {
+  rpc InitUpload(InitUploadRequest) returns (InitUploadResponse);
+  rpc UploadPart(UploadPartRequest) returns (google.protobuf.Empty);
+  rpc CompleteUpload(CompleteUploadRequest) returns (google.protobuf.Empty);
+  rpc DownloadPart(DownloadRequest) returns (stream DownloadResponse);
+  rpc DeleteFile(DeleteRequest) returns (google.protobuf.Empty);
+  rpc GeneratePresignedURL(GeneratePresignedURLRequest) returns (GeneratePresignedURLResponse);
+}

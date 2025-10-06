@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package storage;
+option go_package = "./storage";
+
+// 文件信息
+message File {
+  string id = 1;
+  string name = 2;
+  string size = 3;
+  string type = 4;
+  string owner_id = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  string path = 8;
+  bool is_public = 9;
+}
+
+// 上传文件请求
+message UploadFileRequest {
+  bytes content = 1;
+  string filename = 2;
+  string owner_id = 3;
+  bool is_public = 4;
+}
+
+// 上传文件响应
+message UploadFileResponse {
+  bool success = 1;
+  string message = 2;
+  File file = 3;
+}
+
+// 下载文件请求
+message DownloadFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+// 下载文件响应
+message DownloadFileResponse {
+  bool success = 1;
+  string message = 2;
+  bytes content = 3;
+  File file = 4;
+}
+
+// 删除文件请求
+message DeleteFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+// 删除文件响应
+message DeleteFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 列出文件请求
+message ListFilesRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+// 列出文件响应
+message ListFilesResponse {
+  bool success = 1;
+  string message = 2;
+  repeated File files = 3;
+  int32 total = 4;
+}
+
+// 获取文件信息请求
+message GetFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+// 获取文件信息响应
+message GetFileResponse {
+  bool success = 1;
+  string message = 2;
+  File file = 3;
+}
+
+// 存储服务
+service StorageService {
+  // 上传文件
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+  
+  // 下载文件
+  rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse);
+  
+  // 删除文件
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  
+  // 列出用户的文件
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  
+  // 获取文件信息
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+}

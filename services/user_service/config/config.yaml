@@ -1,0 +1,17 @@
+server:
+  port: "50051"
+
+jwt:
+  secret: "cloud-storage-user-service-secret-key"
+
+database:
+  host: "localhost"
+  port: 3306
+  user: "file_service"
+  password: "file_password"
+  name: "file_db"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0

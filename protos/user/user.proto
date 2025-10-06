@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package user_service;
+
+option go_package = "/proto;user_service";
+
+// 用户信息
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+  string avatar = 4;
+  int64 total_space = 5;
+  int64 used_space = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+// 注册
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  User user = 3;
+}
+
+// 登录
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  int64 user_id = 3;
+  string token = 4;
+}
+
+// 获取用户信息
+message GetUserInfoRequest {
+  int64 user_id = 1;
+}
+
+message GetUserInfoResponse {
+  User user = 1;
+}
+
+// 更新用户信息
+message UpdateUserInfoRequest {
+  int64 user_id = 1;
+  string email = 2;
+  string avatar = 3;
+}
+
+message UpdateUserInfoResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 更新存储使用量（上传完成后调用）
+message UpdateUsageRequest {
+  int64 user_id = 1;
+  int64 delta = 2; // 文件大小增减（正数=增加，负数=减少）
+}
+
+message UpdateUsageResponse {
+  bool success = 1;
+  int64 used_space = 2;
+}
+
+// 更新用户容量（例如升级套餐）
+message UpdateCapacityRequest {
+  int64 user_id = 1;
+  int64 new_total_space = 2; // 新的总空间容量（单位：字节）
+}
+
+message UpdateCapacityResponse {
+  bool success = 1;
+  string message = 2;
+  int64 total_space = 3;
+}
+
+// ✅ 检查用户容量是否足够（上传前调用）
+message CheckCapacityRequest {
+  int64 user_id = 1;
+  int64 file_size = 2;
+}
+
+message CheckCapacityResponse {
+  bool enough = 1;       // 是否足够
+  string message = 2;    // 不足时提示信息
+  int64 remaining = 3;   // 剩余容量
+}
+
+// 用户服务定义
+service UserService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+  rpc UpdateUserInfo(UpdateUserInfoRequest) returns (UpdateUserInfoResponse);
+  rpc UpdateUsage(UpdateUsageRequest) returns (UpdateUsageResponse);
+  rpc UpdateCapacity(UpdateCapacityRequest) returns (UpdateCapacityResponse);
+  rpc CheckCapacity(CheckCapacityRequest) returns (CheckCapacityResponse); // ✅ 新增
+}
