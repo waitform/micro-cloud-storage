@@ -3,29 +3,32 @@ package rpc
 import (
 	sharepb "cloud-storage/protos/share/proto"
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // ShareServiceClient 封装分享服务客户端
 type ShareServiceClient struct {
 	*ServiceClient
 	grpcClient sharepb.ShareServiceClient
+	conn       *grpc.ClientConn
 }
 
 // NewShareServiceClient 创建分享服务客户端
 func NewShareServiceClient(serviceClient *ServiceClient) (*ShareServiceClient, error) {
-	// 获取分享服务地址
-	addr, err := serviceClient.GetServiceAddr("share-service")
+	// 使用etcd解析器创建连接
+	target := fmt.Sprintf("etcd:///%s", "share-service")
+	conn, err := grpc.Dial(target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
+		grpc.WithBlock(),
+	)
 	if err != nil {
-		return nil, err
-	}
-
-	// 创建gRPC连接
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial share-service: %w", err)
 	}
 
 	// 创建gRPC客户端
@@ -34,7 +37,16 @@ func NewShareServiceClient(serviceClient *ServiceClient) (*ShareServiceClient, e
 	return &ShareServiceClient{
 		ServiceClient: serviceClient,
 		grpcClient:    grpcClient,
+		conn:          conn,
 	}, nil
+}
+
+// Close 关闭gRPC连接
+func (s *ShareServiceClient) Close() error {
+	if s.conn != nil {
+		return s.conn.Close()
+	}
+	return nil
 }
 
 // CreateShare 创建分享

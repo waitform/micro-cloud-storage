@@ -166,9 +166,6 @@ func (h *FileHandler) HandleDirectUpload(c *gin.Context) {
 	hash := md5.Sum(fileData)
 	md5Str := hex.EncodeToString(hash[:])
 
-	// 重置文件指针
-	src.Seek(0, 0)
-
 	// 初始化上传
 	initReq := &filepb.InitUploadRequest{
 		FileName: filename,
@@ -198,14 +195,17 @@ func (h *FileHandler) HandleDirectUpload(c *gin.Context) {
 
 		// 读取分片数据
 		partData := fileData[i : i+currentPartSize]
+
+		// 计算分片MD5
 		partHash := md5.Sum(partData)
 		partMD5 := hex.EncodeToString(partHash[:])
+
 		// 上传分片
 		uploadPartReq := &filepb.UploadPartRequest{
 			FileId:     fileID,
 			PartNumber: partNumber,
 			Data:       partData,
-			Md5:        partMD5,
+			Md5:        partMD5, // 添加MD5校验
 		}
 
 		_, err := h.fileClient.UploadPart(ctx, uploadPartReq)
@@ -231,4 +231,71 @@ func (h *FileHandler) HandleDirectUpload(c *gin.Context) {
 	}
 
 	pack.WriteJSON(c, http.StatusOK, "File uploaded successfully", completeResp)
+}
+
+// HandleGetUploadProgress 处理获取上传进度请求
+func (h *FileHandler) HandleGetUploadProgress(c *gin.Context) {
+	fileIDStr := c.Query("file_id")
+	if fileIDStr == "" {
+		pack.WriteError(c, http.StatusBadRequest, "Missing file_id parameter")
+		return
+	}
+
+	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
+	if err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid file_id parameter")
+		return
+	}
+
+	req := &filepb.GetUploadProgressRequest{
+		FileId: fileID,
+	}
+
+	ctx := context.Background()
+	resp, err := h.fileClient.GetUploadProgress(ctx, req)
+	if err != nil {
+		utils.Error("Failed to get upload progress: %v", err)
+		pack.WriteError(c, http.StatusInternalServerError, "Failed to get upload progress")
+		return
+	}
+
+	pack.WriteJSON(c, http.StatusOK, "Upload progress retrieved successfully", resp)
+}
+
+// HandleGetIncompleteParts 处理获取未完成分片请求
+func (h *FileHandler) HandleGetIncompleteParts(c *gin.Context) {
+	var req filepb.GetIncompletePartsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	ctx := context.Background()
+	resp, err := h.fileClient.GetIncompleteParts(ctx, &req)
+	if err != nil {
+		utils.Error("Failed to get incomplete parts: %v", err)
+		pack.WriteError(c, http.StatusInternalServerError, "Failed to get incomplete parts")
+		return
+	}
+
+	pack.WriteJSON(c, http.StatusOK, "Incomplete parts retrieved successfully", resp)
+}
+
+// HandleCancelUpload 处理取消上传请求
+func (h *FileHandler) HandleCancelUpload(c *gin.Context) {
+	var req filepb.CancelUploadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	ctx := context.Background()
+	_, err := h.fileClient.CancelUpload(ctx, &req)
+	if err != nil {
+		utils.Error("Failed to cancel upload: %v", err)
+		pack.WriteError(c, http.StatusInternalServerError, "Failed to cancel upload")
+		return
+	}
+
+	pack.WriteJSON(c, http.StatusOK, "Upload cancelled successfully", nil)
 }

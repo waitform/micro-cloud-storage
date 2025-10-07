@@ -4,7 +4,7 @@
 // 	protoc        v4.23.1
 // source: file.proto
 
-package proto
+package filepb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -335,6 +335,50 @@ func (x *CompleteUploadRequest) GetFileId() int64 {
 	return 0
 }
 
+type CompleteUploadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	File          *FileInfo              `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteUploadResponse) Reset() {
+	*x = CompleteUploadResponse{}
+	mi := &file_file_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteUploadResponse) ProtoMessage() {}
+
+func (x *CompleteUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteUploadResponse.ProtoReflect.Descriptor instead.
+func (*CompleteUploadResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CompleteUploadResponse) GetFile() *FileInfo {
+	if x != nil {
+		return x.File
+	}
+	return nil
+}
+
 // 下载请求
 type DownloadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -346,7 +390,7 @@ type DownloadRequest struct {
 
 func (x *DownloadRequest) Reset() {
 	*x = DownloadRequest{}
-	mi := &file_file_proto_msgTypes[5]
+	mi := &file_file_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +402,7 @@ func (x *DownloadRequest) String() string {
 func (*DownloadRequest) ProtoMessage() {}
 
 func (x *DownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[5]
+	mi := &file_file_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +415,7 @@ func (x *DownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadRequest.ProtoReflect.Descriptor instead.
 func (*DownloadRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{5}
+	return file_file_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DownloadRequest) GetFileId() int64 {
@@ -398,7 +442,7 @@ type DownloadResponse struct {
 
 func (x *DownloadResponse) Reset() {
 	*x = DownloadResponse{}
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_file_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -410,7 +454,7 @@ func (x *DownloadResponse) String() string {
 func (*DownloadResponse) ProtoMessage() {}
 
 func (x *DownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_file_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -423,7 +467,7 @@ func (x *DownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadResponse.ProtoReflect.Descriptor instead.
 func (*DownloadResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{6}
+	return file_file_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DownloadResponse) GetData() []byte {
@@ -450,7 +494,7 @@ type DeleteRequest struct {
 
 func (x *DeleteRequest) Reset() {
 	*x = DeleteRequest{}
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_file_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -462,7 +506,7 @@ func (x *DeleteRequest) String() string {
 func (*DeleteRequest) ProtoMessage() {}
 
 func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_file_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -475,7 +519,7 @@ func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{7}
+	return file_file_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DeleteRequest) GetFileId() int64 {
@@ -496,7 +540,7 @@ type GeneratePresignedURLRequest struct {
 
 func (x *GeneratePresignedURLRequest) Reset() {
 	*x = GeneratePresignedURLRequest{}
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_file_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -508,7 +552,7 @@ func (x *GeneratePresignedURLRequest) String() string {
 func (*GeneratePresignedURLRequest) ProtoMessage() {}
 
 func (x *GeneratePresignedURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_file_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -521,7 +565,7 @@ func (x *GeneratePresignedURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneratePresignedURLRequest.ProtoReflect.Descriptor instead.
 func (*GeneratePresignedURLRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{8}
+	return file_file_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GeneratePresignedURLRequest) GetFileId() int64 {
@@ -548,7 +592,7 @@ type GeneratePresignedURLResponse struct {
 
 func (x *GeneratePresignedURLResponse) Reset() {
 	*x = GeneratePresignedURLResponse{}
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_file_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +604,7 @@ func (x *GeneratePresignedURLResponse) String() string {
 func (*GeneratePresignedURLResponse) ProtoMessage() {}
 
 func (x *GeneratePresignedURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_file_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +617,7 @@ func (x *GeneratePresignedURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneratePresignedURLResponse.ProtoReflect.Descriptor instead.
 func (*GeneratePresignedURLResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{9}
+	return file_file_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GeneratePresignedURLResponse) GetUrl() string {
@@ -590,6 +634,7 @@ func (x *GeneratePresignedURLResponse) GetExpireAt() int64 {
 	return 0
 }
 
+// 获取文件信息
 type GetFileInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
@@ -599,7 +644,7 @@ type GetFileInfoRequest struct {
 
 func (x *GetFileInfoRequest) Reset() {
 	*x = GetFileInfoRequest{}
-	mi := &file_file_proto_msgTypes[10]
+	mi := &file_file_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +656,7 @@ func (x *GetFileInfoRequest) String() string {
 func (*GetFileInfoRequest) ProtoMessage() {}
 
 func (x *GetFileInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[10]
+	mi := &file_file_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -624,7 +669,7 @@ func (x *GetFileInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFileInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetFileInfoRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{10}
+	return file_file_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetFileInfoRequest) GetFileId() int64 {
@@ -643,7 +688,7 @@ type GetFileInfoResponse struct {
 
 func (x *GetFileInfoResponse) Reset() {
 	*x = GetFileInfoResponse{}
-	mi := &file_file_proto_msgTypes[11]
+	mi := &file_file_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -655,7 +700,7 @@ func (x *GetFileInfoResponse) String() string {
 func (*GetFileInfoResponse) ProtoMessage() {}
 
 func (x *GetFileInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[11]
+	mi := &file_file_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -668,7 +713,7 @@ func (x *GetFileInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFileInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetFileInfoResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{11}
+	return file_file_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetFileInfoResponse) GetFile() *FileInfo {
@@ -676,6 +721,253 @@ func (x *GetFileInfoResponse) GetFile() *FileInfo {
 		return x.File
 	}
 	return nil
+}
+
+// 获取上传进度
+type GetUploadProgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUploadProgressRequest) Reset() {
+	*x = GetUploadProgressRequest{}
+	mi := &file_file_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUploadProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUploadProgressRequest) ProtoMessage() {}
+
+func (x *GetUploadProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUploadProgressRequest.ProtoReflect.Descriptor instead.
+func (*GetUploadProgressRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetUploadProgressRequest) GetFileId() int64 {
+	if x != nil {
+		return x.FileId
+	}
+	return 0
+}
+
+type GetUploadProgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UploadedSize  int64                  `protobuf:"varint,1,opt,name=uploaded_size,json=uploadedSize,proto3" json:"uploaded_size,omitempty"`
+	TotalSize     int64                  `protobuf:"varint,2,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
+	Progress      float64                `protobuf:"fixed64,3,opt,name=progress,proto3" json:"progress,omitempty"` // 上传进度百分比 (0-100)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUploadProgressResponse) Reset() {
+	*x = GetUploadProgressResponse{}
+	mi := &file_file_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUploadProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUploadProgressResponse) ProtoMessage() {}
+
+func (x *GetUploadProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUploadProgressResponse.ProtoReflect.Descriptor instead.
+func (*GetUploadProgressResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetUploadProgressResponse) GetUploadedSize() int64 {
+	if x != nil {
+		return x.UploadedSize
+	}
+	return 0
+}
+
+func (x *GetUploadProgressResponse) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+func (x *GetUploadProgressResponse) GetProgress() float64 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+// 获取未完成分片
+type GetIncompletePartsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	TotalParts    int32                  `protobuf:"varint,2,opt,name=total_parts,json=totalParts,proto3" json:"total_parts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIncompletePartsRequest) Reset() {
+	*x = GetIncompletePartsRequest{}
+	mi := &file_file_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIncompletePartsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncompletePartsRequest) ProtoMessage() {}
+
+func (x *GetIncompletePartsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncompletePartsRequest.ProtoReflect.Descriptor instead.
+func (*GetIncompletePartsRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetIncompletePartsRequest) GetFileId() int64 {
+	if x != nil {
+		return x.FileId
+	}
+	return 0
+}
+
+func (x *GetIncompletePartsRequest) GetTotalParts() int32 {
+	if x != nil {
+		return x.TotalParts
+	}
+	return 0
+}
+
+type GetIncompletePartsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MissingParts  []int32                `protobuf:"varint,1,rep,packed,name=missing_parts,json=missingParts,proto3" json:"missing_parts,omitempty"` // 缺失的分片编号列表
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIncompletePartsResponse) Reset() {
+	*x = GetIncompletePartsResponse{}
+	mi := &file_file_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIncompletePartsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncompletePartsResponse) ProtoMessage() {}
+
+func (x *GetIncompletePartsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncompletePartsResponse.ProtoReflect.Descriptor instead.
+func (*GetIncompletePartsResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetIncompletePartsResponse) GetMissingParts() []int32 {
+	if x != nil {
+		return x.MissingParts
+	}
+	return nil
+}
+
+// 取消上传
+type CancelUploadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelUploadRequest) Reset() {
+	*x = CancelUploadRequest{}
+	mi := &file_file_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelUploadRequest) ProtoMessage() {}
+
+func (x *CancelUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelUploadRequest.ProtoReflect.Descriptor instead.
+func (*CancelUploadRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CancelUploadRequest) GetFileId() int64 {
+	if x != nil {
+		return x.FileId
+	}
+	return 0
 }
 
 var File_file_proto protoreflect.FileDescriptor
@@ -705,7 +997,9 @@ const file_file_proto_rawDesc = "" +
 	"\x04data\x18\x03 \x01(\fR\x04data\x12\x10\n" +
 	"\x03md5\x18\x04 \x01(\tR\x03md5\"0\n" +
 	"\x15CompleteUploadRequest\x12\x17\n" +
-	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"K\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"D\n" +
+	"\x16CompleteUploadResponse\x12*\n" +
+	"\x04file\x18\x01 \x01(\v2\x16.file_service.FileInfoR\x04file\"K\n" +
 	"\x0fDownloadRequest\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\x03R\x06fileId\x12\x1f\n" +
 	"\vpart_number\x18\x02 \x01(\x05R\n" +
@@ -724,18 +1018,36 @@ const file_file_proto_rawDesc = "" +
 	"\x12GetFileInfoRequest\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"A\n" +
 	"\x13GetFileInfoResponse\x12*\n" +
-	"\x04file\x18\x01 \x01(\v2\x16.file_service.FileInfoR\x04file2\xcb\x04\n" +
+	"\x04file\x18\x01 \x01(\v2\x16.file_service.FileInfoR\x04file\"3\n" +
+	"\x18GetUploadProgressRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"{\n" +
+	"\x19GetUploadProgressResponse\x12#\n" +
+	"\ruploaded_size\x18\x01 \x01(\x03R\fuploadedSize\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x02 \x01(\x03R\ttotalSize\x12\x1a\n" +
+	"\bprogress\x18\x03 \x01(\x01R\bprogress\"U\n" +
+	"\x19GetIncompletePartsRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\x12\x1f\n" +
+	"\vtotal_parts\x18\x02 \x01(\x05R\n" +
+	"totalParts\"A\n" +
+	"\x1aGetIncompletePartsResponse\x12#\n" +
+	"\rmissing_parts\x18\x01 \x03(\x05R\fmissingParts\".\n" +
+	"\x13CancelUploadRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId2\xf3\x06\n" +
 	"\vFileService\x12O\n" +
 	"\n" +
 	"InitUpload\x12\x1f.file_service.InitUploadRequest\x1a .file_service.InitUploadResponse\x12E\n" +
 	"\n" +
-	"UploadPart\x12\x1f.file_service.UploadPartRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
-	"\x0eCompleteUpload\x12#.file_service.CompleteUploadRequest\x1a\x16.google.protobuf.Empty\x12O\n" +
+	"UploadPart\x12\x1f.file_service.UploadPartRequest\x1a\x16.google.protobuf.Empty\x12[\n" +
+	"\x0eCompleteUpload\x12#.file_service.CompleteUploadRequest\x1a$.file_service.CompleteUploadResponse\x12O\n" +
 	"\fDownloadPart\x12\x1d.file_service.DownloadRequest\x1a\x1e.file_service.DownloadResponse0\x01\x12A\n" +
 	"\n" +
 	"DeleteFile\x12\x1b.file_service.DeleteRequest\x1a\x16.google.protobuf.Empty\x12m\n" +
 	"\x14GeneratePresignedURL\x12).file_service.GeneratePresignedURLRequest\x1a*.file_service.GeneratePresignedURLResponse\x12R\n" +
-	"\vGetFileInfo\x12 .file_service.GetFileInfoRequest\x1a!.file_service.GetFileInfoResponseB\tZ\a/proto;b\x06proto3"
+	"\vGetFileInfo\x12 .file_service.GetFileInfoRequest\x1a!.file_service.GetFileInfoResponse\x12d\n" +
+	"\x11GetUploadProgress\x12&.file_service.GetUploadProgressRequest\x1a'.file_service.GetUploadProgressResponse\x12g\n" +
+	"\x12GetIncompleteParts\x12'.file_service.GetIncompletePartsRequest\x1a(.file_service.GetIncompletePartsResponse\x12I\n" +
+	"\fCancelUpload\x12!.file_service.CancelUploadRequest\x1a\x16.google.protobuf.EmptyB\x0fZ\r/proto;filepbb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -749,44 +1061,57 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_file_proto_goTypes = []any{
 	(*FileInfo)(nil),                     // 0: file_service.FileInfo
 	(*InitUploadRequest)(nil),            // 1: file_service.InitUploadRequest
 	(*InitUploadResponse)(nil),           // 2: file_service.InitUploadResponse
 	(*UploadPartRequest)(nil),            // 3: file_service.UploadPartRequest
 	(*CompleteUploadRequest)(nil),        // 4: file_service.CompleteUploadRequest
-	(*DownloadRequest)(nil),              // 5: file_service.DownloadRequest
-	(*DownloadResponse)(nil),             // 6: file_service.DownloadResponse
-	(*DeleteRequest)(nil),                // 7: file_service.DeleteRequest
-	(*GeneratePresignedURLRequest)(nil),  // 8: file_service.GeneratePresignedURLRequest
-	(*GeneratePresignedURLResponse)(nil), // 9: file_service.GeneratePresignedURLResponse
-	(*GetFileInfoRequest)(nil),           // 10: file_service.GetFileInfoRequest
-	(*GetFileInfoResponse)(nil),          // 11: file_service.GetFileInfoResponse
-	(*emptypb.Empty)(nil),                // 12: google.protobuf.Empty
+	(*CompleteUploadResponse)(nil),       // 5: file_service.CompleteUploadResponse
+	(*DownloadRequest)(nil),              // 6: file_service.DownloadRequest
+	(*DownloadResponse)(nil),             // 7: file_service.DownloadResponse
+	(*DeleteRequest)(nil),                // 8: file_service.DeleteRequest
+	(*GeneratePresignedURLRequest)(nil),  // 9: file_service.GeneratePresignedURLRequest
+	(*GeneratePresignedURLResponse)(nil), // 10: file_service.GeneratePresignedURLResponse
+	(*GetFileInfoRequest)(nil),           // 11: file_service.GetFileInfoRequest
+	(*GetFileInfoResponse)(nil),          // 12: file_service.GetFileInfoResponse
+	(*GetUploadProgressRequest)(nil),     // 13: file_service.GetUploadProgressRequest
+	(*GetUploadProgressResponse)(nil),    // 14: file_service.GetUploadProgressResponse
+	(*GetIncompletePartsRequest)(nil),    // 15: file_service.GetIncompletePartsRequest
+	(*GetIncompletePartsResponse)(nil),   // 16: file_service.GetIncompletePartsResponse
+	(*CancelUploadRequest)(nil),          // 17: file_service.CancelUploadRequest
+	(*emptypb.Empty)(nil),                // 18: google.protobuf.Empty
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: file_service.InitUploadResponse.file:type_name -> file_service.FileInfo
-	0,  // 1: file_service.GetFileInfoResponse.file:type_name -> file_service.FileInfo
-	1,  // 2: file_service.FileService.InitUpload:input_type -> file_service.InitUploadRequest
-	3,  // 3: file_service.FileService.UploadPart:input_type -> file_service.UploadPartRequest
-	4,  // 4: file_service.FileService.CompleteUpload:input_type -> file_service.CompleteUploadRequest
-	5,  // 5: file_service.FileService.DownloadPart:input_type -> file_service.DownloadRequest
-	7,  // 6: file_service.FileService.DeleteFile:input_type -> file_service.DeleteRequest
-	8,  // 7: file_service.FileService.GeneratePresignedURL:input_type -> file_service.GeneratePresignedURLRequest
-	10, // 8: file_service.FileService.GetFileInfo:input_type -> file_service.GetFileInfoRequest
-	2,  // 9: file_service.FileService.InitUpload:output_type -> file_service.InitUploadResponse
-	12, // 10: file_service.FileService.UploadPart:output_type -> google.protobuf.Empty
-	12, // 11: file_service.FileService.CompleteUpload:output_type -> google.protobuf.Empty
-	6,  // 12: file_service.FileService.DownloadPart:output_type -> file_service.DownloadResponse
-	12, // 13: file_service.FileService.DeleteFile:output_type -> google.protobuf.Empty
-	9,  // 14: file_service.FileService.GeneratePresignedURL:output_type -> file_service.GeneratePresignedURLResponse
-	11, // 15: file_service.FileService.GetFileInfo:output_type -> file_service.GetFileInfoResponse
-	9,  // [9:16] is the sub-list for method output_type
-	2,  // [2:9] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	0,  // 1: file_service.CompleteUploadResponse.file:type_name -> file_service.FileInfo
+	0,  // 2: file_service.GetFileInfoResponse.file:type_name -> file_service.FileInfo
+	1,  // 3: file_service.FileService.InitUpload:input_type -> file_service.InitUploadRequest
+	3,  // 4: file_service.FileService.UploadPart:input_type -> file_service.UploadPartRequest
+	4,  // 5: file_service.FileService.CompleteUpload:input_type -> file_service.CompleteUploadRequest
+	6,  // 6: file_service.FileService.DownloadPart:input_type -> file_service.DownloadRequest
+	8,  // 7: file_service.FileService.DeleteFile:input_type -> file_service.DeleteRequest
+	9,  // 8: file_service.FileService.GeneratePresignedURL:input_type -> file_service.GeneratePresignedURLRequest
+	11, // 9: file_service.FileService.GetFileInfo:input_type -> file_service.GetFileInfoRequest
+	13, // 10: file_service.FileService.GetUploadProgress:input_type -> file_service.GetUploadProgressRequest
+	15, // 11: file_service.FileService.GetIncompleteParts:input_type -> file_service.GetIncompletePartsRequest
+	17, // 12: file_service.FileService.CancelUpload:input_type -> file_service.CancelUploadRequest
+	2,  // 13: file_service.FileService.InitUpload:output_type -> file_service.InitUploadResponse
+	18, // 14: file_service.FileService.UploadPart:output_type -> google.protobuf.Empty
+	5,  // 15: file_service.FileService.CompleteUpload:output_type -> file_service.CompleteUploadResponse
+	7,  // 16: file_service.FileService.DownloadPart:output_type -> file_service.DownloadResponse
+	18, // 17: file_service.FileService.DeleteFile:output_type -> google.protobuf.Empty
+	10, // 18: file_service.FileService.GeneratePresignedURL:output_type -> file_service.GeneratePresignedURLResponse
+	12, // 19: file_service.FileService.GetFileInfo:output_type -> file_service.GetFileInfoResponse
+	14, // 20: file_service.FileService.GetUploadProgress:output_type -> file_service.GetUploadProgressResponse
+	16, // 21: file_service.FileService.GetIncompleteParts:output_type -> file_service.GetIncompletePartsResponse
+	18, // 22: file_service.FileService.CancelUpload:output_type -> google.protobuf.Empty
+	13, // [13:23] is the sub-list for method output_type
+	3,  // [3:13] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -800,7 +1125,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

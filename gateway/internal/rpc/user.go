@@ -3,29 +3,32 @@ package rpc
 import (
 	userpb "cloud-storage/protos/user/proto"
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // UserServiceClient 封装用户服务客户端
 type UserServiceClient struct {
 	*ServiceClient
 	grpcClient userpb.UserServiceClient
+	conn       *grpc.ClientConn
 }
 
 // NewUserServiceClient 创建用户服务客户端
 func NewUserServiceClient(serviceClient *ServiceClient) (*UserServiceClient, error) {
-	// 获取用户服务地址
-	addr, err := serviceClient.GetServiceAddr("user-service")
+	// 使用etcd解析器创建连接
+	target := fmt.Sprintf("etcd:///%s", "user-service")
+	conn, err := grpc.Dial(target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
+		grpc.WithBlock(),
+	)
 	if err != nil {
-		return nil, err
-	}
-
-	// 创建gRPC连接
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial user-service: %w", err)
 	}
 
 	// 创建gRPC客户端
@@ -34,7 +37,16 @@ func NewUserServiceClient(serviceClient *ServiceClient) (*UserServiceClient, err
 	return &UserServiceClient{
 		ServiceClient: serviceClient,
 		grpcClient:    grpcClient,
+		conn:          conn,
 	}, nil
+}
+
+// Close 关闭gRPC连接
+func (u *UserServiceClient) Close() error {
+	if u.conn != nil {
+		return u.conn.Close()
+	}
+	return nil
 }
 
 // Register 用户注册
@@ -71,28 +83,4 @@ func (u *UserServiceClient) GetUserInfo(ctx context.Context, req *userpb.GetUser
 	}
 
 	return u.grpcClient.GetUserInfo(ctx, req)
-}
-
-// UpdateUserInfo 更新用户信息
-func (u *UserServiceClient) UpdateUserInfo(ctx context.Context, req *userpb.UpdateUserInfoRequest) (*userpb.UpdateUserInfoResponse, error) {
-	// 设置默认超时时间
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-	}
-
-	return u.grpcClient.UpdateUserInfo(ctx, req)
-}
-
-// CheckCapacity 检查用户容量
-func (u *UserServiceClient) CheckCapacity(ctx context.Context, req *userpb.CheckCapacityRequest) (*userpb.CheckCapacityResponse, error) {
-	// 设置默认超时时间
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-	}
-
-	return u.grpcClient.CheckCapacity(ctx, req)
 }

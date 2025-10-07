@@ -38,5 +38,8 @@ func RegisterRoutes(r *gin.Engine,
 		fileGroup.POST("/upload/complete", middleware.AuthMiddleware(), fileHandler.HandleCompleteUpload)
 		fileGroup.GET("/info", middleware.AuthMiddleware(), fileHandler.HandleGetFileInfo)
 		fileGroup.POST("/presigned-url", middleware.AuthMiddleware(), fileHandler.HandleGeneratePresignedURL)
+		fileGroup.GET("/upload/progress", middleware.AuthMiddleware(), fileHandler.HandleGetUploadProgress)
+		fileGroup.POST("/upload/incomplete-parts", middleware.AuthMiddleware(), fileHandler.HandleGetIncompleteParts)
+		fileGroup.POST("/upload/cancel", middleware.AuthMiddleware(), fileHandler.HandleCancelUpload)
 	}
 }

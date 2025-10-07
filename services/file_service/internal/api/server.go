@@ -1,31 +1,32 @@
 package api
 
 import (
-	"cloud-storage-file-service/internal/service"
-	"cloud-storage-file-service/proto"
 	"context"
 
+	"cloud-storage-file-service/internal/service"
+	filepb "cloud-storage-file-service/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type FileServiceServer struct {
-	proto.UnimplementedFileServiceServer
+	filepb.UnimplementedFileServiceServer
 	storage *service.StorageService
 }
 
-func NewFileServiceServer(storage *service.StorageService) proto.FileServiceServer {
+func NewFileServiceServer(storage *service.StorageService) filepb.FileServiceServer {
 	return &FileServiceServer{
 		storage: storage,
 	}
 }
-func (s *FileServiceServer) InitUpload(ctx context.Context, req *proto.InitUploadRequest) (*proto.InitUploadResponse, error) {
+
+func (s *FileServiceServer) InitUpload(ctx context.Context, req *filepb.InitUploadRequest) (*filepb.InitUploadResponse, error) {
 	file, err := s.storage.InitUpload(ctx, req.FileName, req.Size, req.Md5, req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.InitUploadResponse{
-		File: &proto.FileInfo{
+	return &filepb.InitUploadResponse{
+		File: &filepb.FileInfo{
 			Id:     file.ID,
 			Name:   file.FileName,
 			UserID: file.UserID,
@@ -35,41 +36,61 @@ func (s *FileServiceServer) InitUpload(ctx context.Context, req *proto.InitUploa
 		},
 	}, nil
 }
-func (s *FileServiceServer) UploadPart(ctx context.Context, req *proto.UploadPartRequest) (*emptypb.Empty, error) {
+
+func (s *FileServiceServer) UploadPart(ctx context.Context, req *filepb.UploadPartRequest) (*emptypb.Empty, error) {
 	err := s.storage.UploadPart(ctx, req.FileId, int(req.PartNumber), req.Data, req.Md5)
 	if err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
 }
-func (s *FileServiceServer) CompleteUpload(ctx context.Context, req *proto.CompleteUploadRequest) (*emptypb.Empty, error) {
+
+func (s *FileServiceServer) CompleteUpload(ctx context.Context, req *filepb.CompleteUploadRequest) (*filepb.CompleteUploadResponse, error) {
 	err := s.storage.UploadComplete(ctx, req.FileId)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	
+	// 获取文件信息用于返回
+	file, err := s.storage.GetFileInfo(ctx, req.FileId)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &filepb.CompleteUploadResponse{
+		File: &filepb.FileInfo{
+			Id:     file.ID,
+			Name:   file.FileName,
+			Size:   file.Size,
+			UserID: file.UserID,
+			Md5:    file.Md5,
+			Status: int32(file.Status),
+		},
+	}, nil
 }
-func (s *FileServiceServer) DownloadPart(req *proto.DownloadRequest, stream proto.FileService_DownloadPartServer) error {
+
+func (s *FileServiceServer) DownloadPart(req *filepb.DownloadRequest, stream filepb.FileService_DownloadPartServer) error {
 	chunkData, md5, err := s.storage.DownloadChunk(stream.Context(), req.FileId, int(req.PartNumber), 0)
 	if err != nil {
 		return err
 	}
 
-	resp := &proto.DownloadResponse{
+	resp := &filepb.DownloadResponse{
 		Data: chunkData,
 		Md5:  md5,
 	}
 
 	return stream.Send(resp)
 }
-func (s *FileServiceServer) GetFileInfo(ctx context.Context, req *proto.GetFileInfoRequest) (*proto.GetFileInfoResponse, error) {
+
+func (s *FileServiceServer) GetFileInfo(ctx context.Context, req *filepb.GetFileInfoRequest) (*filepb.GetFileInfoResponse, error) {
 	file, err := s.storage.GetFileInfo(ctx, req.FileId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.GetFileInfoResponse{
-		File: &proto.FileInfo{
+	return &filepb.GetFileInfoResponse{
+		File: &filepb.FileInfo{
 			Id:     file.ID,
 			Name:   file.FileName,
 			Size:   file.Size,
@@ -81,20 +102,67 @@ func (s *FileServiceServer) GetFileInfo(ctx context.Context, req *proto.GetFileI
 }
 
 // 生成预签名URL
-func (s *FileServiceServer) GeneratePresignedURL(ctx context.Context, req *proto.GeneratePresignedURLRequest) (*proto.GeneratePresignedURLResponse, error) {
+func (s *FileServiceServer) GeneratePresignedURL(ctx context.Context, req *filepb.GeneratePresignedURLRequest) (*filepb.GeneratePresignedURLResponse, error) {
 	url, expireAt, err := s.storage.GeneratePresignedURL(ctx, req.FileId, req.ExpireSeconds)
 	if err != nil {
 		return nil, err
 	}
 	//返回url和过期时间
-	return &proto.GeneratePresignedURLResponse{
+	return &filepb.GeneratePresignedURLResponse{
 		Url:      url,
 		ExpireAt: expireAt,
 	}, nil
 }
 
 // 删除文件
-func (s *FileServiceServer) DeleteFile(ctx context.Context, req *proto.DeleteRequest) (*emptypb.Empty, error) {
+func (s *FileServiceServer) DeleteFile(ctx context.Context, req *filepb.DeleteRequest) (*emptypb.Empty, error) {
+	err := s.storage.DeleteFile(ctx, req.FileId)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// 获取上传进度
+func (s *FileServiceServer) GetUploadProgress(ctx context.Context, req *filepb.GetUploadProgressRequest) (*filepb.GetUploadProgressResponse, error) {
+	uploadedSize, totalSize, err := s.storage.GetUploadProgress(req.FileId)
+	if err != nil {
+		return nil, err
+	}
+
+	// 计算进度百分比
+	var progress float64
+	if totalSize > 0 {
+		progress = float64(uploadedSize) / float64(totalSize) * 100
+	}
+
+	return &filepb.GetUploadProgressResponse{
+		UploadedSize: uploadedSize,
+		TotalSize:    totalSize,
+		Progress:     progress,
+	}, nil
+}
+
+// 获取未完成的分片
+func (s *FileServiceServer) GetIncompleteParts(ctx context.Context, req *filepb.GetIncompletePartsRequest) (*filepb.GetIncompletePartsResponse, error) {
+	missingParts, err := s.storage.GetIncompleteParts(ctx, req.FileId, int(req.TotalParts))
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换为int32切片
+	missingParts32 := make([]int32, len(missingParts))
+	for i, part := range missingParts {
+		missingParts32[i] = int32(part)
+	}
+
+	return &filepb.GetIncompletePartsResponse{
+		MissingParts: missingParts32,
+	}, nil
+}
+
+// 取消上传
+func (s *FileServiceServer) CancelUpload(ctx context.Context, req *filepb.CancelUploadRequest) (*emptypb.Empty, error) {
 	err := s.storage.DeleteFile(ctx, req.FileId)
 	if err != nil {
 		return nil, err

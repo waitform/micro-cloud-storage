@@ -3,9 +3,12 @@ package rpc
 import (
 	filepb "cloud-storage/protos/file/proto"
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -13,20 +16,24 @@ import (
 type FileServiceClient struct {
 	*ServiceClient
 	grpcClient filepb.FileServiceClient
+	conn       *grpc.ClientConn
 }
 
 // NewFileServiceClient 创建文件服务客户端
 func NewFileServiceClient(serviceClient *ServiceClient) (*FileServiceClient, error) {
-	// 获取文件服务地址
-	addr, err := serviceClient.GetServiceAddr("file-service")
+	// 使用etcd解析器创建连接
+	target := fmt.Sprintf("etcd:///%s", "file-service")
+	conn, err := grpc.Dial(target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(10*1024*1024),
+			grpc.MaxCallSendMsgSize(10*1024*1024),
+		),
+		grpc.WithBlock(),
+	)
 	if err != nil {
-		return nil, err
-	}
-
-	// 创建gRPC连接
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial file-service: %w", err)
 	}
 
 	// 创建gRPC客户端
@@ -35,7 +42,16 @@ func NewFileServiceClient(serviceClient *ServiceClient) (*FileServiceClient, err
 	return &FileServiceClient{
 		ServiceClient: serviceClient,
 		grpcClient:    grpcClient,
+		conn:          conn,
 	}, nil
+}
+
+// Close 关闭gRPC连接
+func (f *FileServiceClient) Close() error {
+	if f.conn != nil {
+		return f.conn.Close()
+	}
+	return nil
 }
 
 // InitUpload 初始化上传
@@ -63,7 +79,7 @@ func (f *FileServiceClient) UploadPart(ctx context.Context, req *filepb.UploadPa
 }
 
 // CompleteUpload 完成上传
-func (f *FileServiceClient) CompleteUpload(ctx context.Context, req *filepb.CompleteUploadRequest) (*emptypb.Empty, error) {
+func (f *FileServiceClient) CompleteUpload(ctx context.Context, req *filepb.CompleteUploadRequest) (*filepb.CompleteUploadResponse, error) {
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
@@ -96,4 +112,40 @@ func (f *FileServiceClient) GeneratePresignedURL(ctx context.Context, req *filep
 	}
 
 	return f.grpcClient.GeneratePresignedURL(ctx, req)
+}
+
+// GetUploadProgress 获取上传进度
+func (f *FileServiceClient) GetUploadProgress(ctx context.Context, req *filepb.GetUploadProgressRequest) (*filepb.GetUploadProgressResponse, error) {
+	// 设置默认超时时间
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	return f.grpcClient.GetUploadProgress(ctx, req)
+}
+
+// GetIncompleteParts 获取未完成分片
+func (f *FileServiceClient) GetIncompleteParts(ctx context.Context, req *filepb.GetIncompletePartsRequest) (*filepb.GetIncompletePartsResponse, error) {
+	// 设置默认超时时间
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	return f.grpcClient.GetIncompleteParts(ctx, req)
+}
+
+// CancelUpload 取消上传
+func (f *FileServiceClient) CancelUpload(ctx context.Context, req *filepb.CancelUploadRequest) (*emptypb.Empty, error) {
+	// 设置默认超时时间
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	return f.grpcClient.CancelUpload(ctx, req)
 }

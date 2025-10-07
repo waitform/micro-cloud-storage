@@ -69,7 +69,7 @@
 
 - `POST /api/file/upload/init` - 初始化文件上传（需要认证）
 - `POST /api/file/upload/part` - 上传文件分片（需要认证）
-- `POST /api/file/upload/complete` - 完成文件上传（需要认证）
+- `POST /api/file/upload/ complete` - 完成文件上传（需要认证）
 - `GET /api/file/info` - 获取文件信息（需要认证）
 - `POST /api/file/presigned-url` - 生成预签名URL（需要认证）
 

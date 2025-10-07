@@ -4,7 +4,7 @@
 // - protoc             v4.23.1
 // source: file.proto
 
-package proto
+package filepb
 
 import (
 	context "context"
@@ -27,6 +27,9 @@ const (
 	FileService_DeleteFile_FullMethodName           = "/file_service.FileService/DeleteFile"
 	FileService_GeneratePresignedURL_FullMethodName = "/file_service.FileService/GeneratePresignedURL"
 	FileService_GetFileInfo_FullMethodName          = "/file_service.FileService/GetFileInfo"
+	FileService_GetUploadProgress_FullMethodName    = "/file_service.FileService/GetUploadProgress"
+	FileService_GetIncompleteParts_FullMethodName   = "/file_service.FileService/GetIncompleteParts"
+	FileService_CancelUpload_FullMethodName         = "/file_service.FileService/CancelUpload"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -37,11 +40,14 @@ const (
 type FileServiceClient interface {
 	InitUpload(ctx context.Context, in *InitUploadRequest, opts ...grpc.CallOption) (*InitUploadResponse, error)
 	UploadPart(ctx context.Context, in *UploadPartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error)
 	DownloadPart(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadResponse], error)
 	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GeneratePresignedURL(ctx context.Context, in *GeneratePresignedURLRequest, opts ...grpc.CallOption) (*GeneratePresignedURLResponse, error)
 	GetFileInfo(ctx context.Context, in *GetFileInfoRequest, opts ...grpc.CallOption) (*GetFileInfoResponse, error)
+	GetUploadProgress(ctx context.Context, in *GetUploadProgressRequest, opts ...grpc.CallOption) (*GetUploadProgressResponse, error)
+	GetIncompleteParts(ctx context.Context, in *GetIncompletePartsRequest, opts ...grpc.CallOption) (*GetIncompletePartsResponse, error)
+	CancelUpload(ctx context.Context, in *CancelUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type fileServiceClient struct {
@@ -72,9 +78,9 @@ func (c *fileServiceClient) UploadPart(ctx context.Context, in *UploadPartReques
 	return out, nil
 }
 
-func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(CompleteUploadResponse)
 	err := c.cc.Invoke(ctx, FileService_CompleteUpload_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -131,6 +137,36 @@ func (c *fileServiceClient) GetFileInfo(ctx context.Context, in *GetFileInfoRequ
 	return out, nil
 }
 
+func (c *fileServiceClient) GetUploadProgress(ctx context.Context, in *GetUploadProgressRequest, opts ...grpc.CallOption) (*GetUploadProgressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUploadProgressResponse)
+	err := c.cc.Invoke(ctx, FileService_GetUploadProgress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) GetIncompleteParts(ctx context.Context, in *GetIncompletePartsRequest, opts ...grpc.CallOption) (*GetIncompletePartsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIncompletePartsResponse)
+	err := c.cc.Invoke(ctx, FileService_GetIncompleteParts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) CancelUpload(ctx context.Context, in *CancelUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FileService_CancelUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -139,11 +175,14 @@ func (c *fileServiceClient) GetFileInfo(ctx context.Context, in *GetFileInfoRequ
 type FileServiceServer interface {
 	InitUpload(context.Context, *InitUploadRequest) (*InitUploadResponse, error)
 	UploadPart(context.Context, *UploadPartRequest) (*emptypb.Empty, error)
-	CompleteUpload(context.Context, *CompleteUploadRequest) (*emptypb.Empty, error)
+	CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error)
 	DownloadPart(*DownloadRequest, grpc.ServerStreamingServer[DownloadResponse]) error
 	DeleteFile(context.Context, *DeleteRequest) (*emptypb.Empty, error)
 	GeneratePresignedURL(context.Context, *GeneratePresignedURLRequest) (*GeneratePresignedURLResponse, error)
 	GetFileInfo(context.Context, *GetFileInfoRequest) (*GetFileInfoResponse, error)
+	GetUploadProgress(context.Context, *GetUploadProgressRequest) (*GetUploadProgressResponse, error)
+	GetIncompleteParts(context.Context, *GetIncompletePartsRequest) (*GetIncompletePartsResponse, error)
+	CancelUpload(context.Context, *CancelUploadRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -160,7 +199,7 @@ func (UnimplementedFileServiceServer) InitUpload(context.Context, *InitUploadReq
 func (UnimplementedFileServiceServer) UploadPart(context.Context, *UploadPartRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadPart not implemented")
 }
-func (UnimplementedFileServiceServer) CompleteUpload(context.Context, *CompleteUploadRequest) (*emptypb.Empty, error) {
+func (UnimplementedFileServiceServer) CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CompleteUpload not implemented")
 }
 func (UnimplementedFileServiceServer) DownloadPart(*DownloadRequest, grpc.ServerStreamingServer[DownloadResponse]) error {
@@ -174,6 +213,15 @@ func (UnimplementedFileServiceServer) GeneratePresignedURL(context.Context, *Gen
 }
 func (UnimplementedFileServiceServer) GetFileInfo(context.Context, *GetFileInfoRequest) (*GetFileInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileInfo not implemented")
+}
+func (UnimplementedFileServiceServer) GetUploadProgress(context.Context, *GetUploadProgressRequest) (*GetUploadProgressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUploadProgress not implemented")
+}
+func (UnimplementedFileServiceServer) GetIncompleteParts(context.Context, *GetIncompletePartsRequest) (*GetIncompletePartsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIncompleteParts not implemented")
+}
+func (UnimplementedFileServiceServer) CancelUpload(context.Context, *CancelUploadRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelUpload not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -315,6 +363,60 @@ func _FileService_GetFileInfo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_GetUploadProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUploadProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).GetUploadProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_GetUploadProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).GetUploadProgress(ctx, req.(*GetUploadProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_GetIncompleteParts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIncompletePartsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).GetIncompleteParts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_GetIncompleteParts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).GetIncompleteParts(ctx, req.(*GetIncompletePartsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_CancelUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).CancelUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_CancelUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).CancelUpload(ctx, req.(*CancelUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -345,6 +447,18 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileInfo",
 			Handler:    _FileService_GetFileInfo_Handler,
+		},
+		{
+			MethodName: "GetUploadProgress",
+			Handler:    _FileService_GetUploadProgress_Handler,
+		},
+		{
+			MethodName: "GetIncompleteParts",
+			Handler:    _FileService_GetIncompleteParts_Handler,
+		},
+		{
+			MethodName: "CancelUpload",
+			Handler:    _FileService_CancelUpload_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

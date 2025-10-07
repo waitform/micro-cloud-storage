@@ -48,6 +48,7 @@ func main() {
 	proto.RegisterUserServiceServer(grpcServer, userServer)
 
 	//注册etcd
+	utils.Info(" Registering user service...")
 	globalCfg, err := global.LoadConfig("global/global.yaml")
 	if err != nil {
 		utils.Warn("Warning: Failed to load global config: %v", err)
@@ -57,7 +58,7 @@ func main() {
 		utils.Warn("Warning: Failed to create etcd client: %v", err)
 	}
 	etcdClient.Register("user-service", fmt.Sprintf("localhost:%d", cfg.GRPC.Port), 5)
-
+	utils.Info(" user-service registered successfully")
 	// 监听端口
 	lis, err := net.Listen("tcp", ":"+cfg.Server.Port)
 	if err != nil {

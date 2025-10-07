@@ -148,7 +148,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"upload_id\": \"upload123\",\n    \"part_number\": 1,\n    \"data\": \"base64-encoded-data\"\n}",
+							"raw": "{\n    \"upload_id\": \"upload123\",\n    \"part_number\": 1,\n    \"data\": \"base64-encoded-data\",\n    \"md5\": \"d41d8cd98f00b204e9800998ecf8427e\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -183,7 +183,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"upload_id\": \"upload123\",\n    \"filename\": \"testfile.txt\"\n}",
+							"raw": "{\n    \"file_id\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -249,7 +249,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"file_id\": 1,\n    \"expiration\": 3600\n}",
+							"raw": "{\n    \"file_id\": 1,\n    \"expire_seconds\": 3600\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -288,7 +288,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"file_id\": 1,\n    \"user_id\": 1,\n    \"expiration\": 3600\n}",
+							"raw": "{\n    \"file_id\": 1,\n    \"share_type\": \"public\",\n    \"expire_seconds\": 3600\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -315,7 +315,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/share/info?share_id=share123",
+							"raw": "{{base_url}}/api/share/info?share_id=1",
 							"host": [
 								"{{base_url}}"
 							],
@@ -327,7 +327,7 @@
 							"query": [
 								{
 									"key": "share_id",
-									"value": "share123"
+									"value": "1"
 								}
 							]
 						}
@@ -341,7 +341,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"share_id\": \"share123\",\n    \"access_code\": \"access123\"\n}",
+							"raw": "{\n    \"share_id\": \"1\",\n    \"access_token\": \"test-token\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -363,36 +363,6 @@
 					"response": []
 				}
 			]
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "token",
-			"value": ""
 		}
 	]
 }

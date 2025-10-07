@@ -2,9 +2,13 @@ package main
 
 import (
 	"cloud-storage/discovery"
+	"cloud-storage/discovery/resolver"
 	"cloud-storage/global"
 	server "cloud-storage/internal/api"
 	handler "cloud-storage/internal/rpc"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"cloud-storage/utils"
 	"log"
@@ -17,6 +21,7 @@ var (
 	shareClient   *handler.ShareServiceClient
 	fileClient    *handler.FileServiceClient
 	gatewayServer *server.GatewayServer
+	serviceClient *handler.ServiceClient
 )
 
 // 初始化日志
@@ -40,12 +45,15 @@ func initETCD() {
 	if err != nil {
 		log.Fatalf("failed to init etcd: %v", err)
 	}
+	
+	// 注册etcd解析器
+	resolver.RegisterEtcdResolver(etcdClient)
 }
 
 // 初始化服务客户端
 func initServiceClients() {
 	// 创建基础服务客户端
-	serviceClient := handler.NewServiceClient(etcdClient, globalCfg)
+	serviceClient = handler.NewServiceClient(etcdClient, globalCfg)
 
 	// 初始化用户服务客户端
 	var err error
@@ -73,6 +81,23 @@ func initServiceClients() {
 	}
 }
 
+// 关闭服务客户端
+func closeServiceClients() {
+	if userClient != nil {
+		userClient.Close()
+	}
+	if shareClient != nil {
+		shareClient.Close()
+	}
+	if fileClient != nil {
+		fileClient.Close()
+	}
+	if serviceClient != nil {
+		serviceClient.Close()
+	}
+	utils.Info("service clients closed")
+}
+
 // 初始化网关服务器
 func initGatewayServer() {
 	gatewayServer = server.NewGatewayServer(userClient, shareClient, fileClient)
@@ -83,12 +108,12 @@ func initGatewayServer() {
 func startHTTPServer() {
 	// 在单独的goroutine中启动HTTP服务器
 	go func() {
-		err := gatewayServer.StartHTTPServer(":8080")
+		err := gatewayServer.StartHTTPServer("0.0.0.0:8080")
 		if err != nil {
 			utils.Error("failed to start HTTP server: %v", err)
 		}
 	}()
-	utils.Info("HTTP server started on :8080")
+	utils.Info("HTTP server started on 0.0.0.0:8080")
 }
 
 // 统一入口
@@ -100,6 +125,7 @@ func main() {
 
 	// 初始化服务客户端
 	initServiceClients()
+	defer closeServiceClients()
 
 	// 初始化网关服务器
 	initGatewayServer()
@@ -109,6 +135,13 @@ func main() {
 
 	utils.Info("gateway started successfully")
 
-	// 阻塞主进程
-	select {}
+	// 等待中断信号以优雅关闭服务器
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	utils.Info("shutting down server...")
+
+	// 关闭服务客户端
+	closeServiceClients()
+	utils.Info("server exited")
 }
