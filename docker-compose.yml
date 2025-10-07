@@ -49,9 +49,9 @@ services:
         - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
         - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://0.0.0.0:2380
         - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
-        - ETCD_INITIAL_CLUSTER=node1=http://0.0.0.0:2380
-        - ETCD_INITIAL_CLUSTER_STATE=new
-        - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+      networks:
+        - cloud-net
+
 networks:
   cloud-net:
     driver: bridge

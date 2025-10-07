@@ -44,6 +44,10 @@ temp/
 ehthumbs.db
 Thumbs.db
 
+# Local services
+etcd/
+minio/
+
 # Build output
 bin/
 dist/

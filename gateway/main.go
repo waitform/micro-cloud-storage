@@ -2,9 +2,10 @@ package main
 
 import (
 	"cloud-storage/discovery"
-	"cloud-storage/gateway/global"
-	"cloud-storage/gateway/internal/handler"
-	"cloud-storage/gateway/internal/server"
+	"cloud-storage/global"
+	server "cloud-storage/internal/api"
+	handler "cloud-storage/internal/rpc"
+
 	"cloud-storage/utils"
 	"log"
 )
@@ -105,9 +106,9 @@ func main() {
 
 	// 启动HTTP服务器
 	startHTTPServer()
-	
+
 	utils.Info("gateway started successfully")
-	
+
 	// 阻塞主进程
 	select {}
 }

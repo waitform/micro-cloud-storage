@@ -11,6 +11,11 @@ type ServerConfig struct {
 	Port string `yaml:"port"`
 }
 
+// GRPCConfig gRPC配置
+type GRPCConfig struct {
+	Port int `yaml:"port"`
+}
+
 // JWTConfig JWT配置
 type JWTConfig struct {
 	Secret string `yaml:"secret"`
@@ -42,6 +47,7 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 	Redis    RedisConfig    `yaml:"redis"`
 	User     UserConfig     `yaml:"user"`
+	GRPC     GRPCConfig     `yaml:"grpc"`
 }
 
 // LoadConfig 加载配置

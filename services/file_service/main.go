@@ -9,6 +9,8 @@ import (
 
 	"cloud-storage-file-service/config"
 	"cloud-storage-file-service/database"
+	"cloud-storage-file-service/discovery"
+	"cloud-storage-file-service/global"
 	"cloud-storage-file-service/internal/api"
 	"cloud-storage-file-service/internal/model"
 	"cloud-storage-file-service/internal/service"
@@ -168,6 +170,17 @@ func initGRPC() {
 
 // startServices 启动所有服务
 func startServices() {
+	//注册etcd
+	globalCfg, err := global.LoadConfig("global/global.yaml")
+	if err != nil {
+		utils.Warn("Warning: Failed to load global config: %v", err)
+	}
+	etcdClient, err := discovery.NewEtcdClient(globalCfg.Etcd.Endpoints)
+	if err != nil {
+		utils.Warn("Warning: Failed to create etcd client: %v", err)
+	}
+	etcdClient.Register("file-service", fmt.Sprintf("localhost:%d", cfg.GRPC.Port), 5)
+
 	// 启动HTTP健康检查服务
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
