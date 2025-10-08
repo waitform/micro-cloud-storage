@@ -5,12 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"cloud-storage/internal/pack"
-	"cloud-storage/internal/rpc"
-	userpb "cloud-storage/protos/user/proto"
-	"cloud-storage/utils"
-
 	"github.com/gin-gonic/gin"
+	pack "github.com/waitform/micro-cloud-storage/internal/pack"
+	"github.com/waitform/micro-cloud-storage/internal/rpc"
+	userpb "github.com/waitform/micro-cloud-storage/protos/user/proto"
+	utils "github.com/waitform/micro-cloud-storage/utils"
 )
 
 type UserHandler struct {
@@ -38,8 +37,14 @@ func (h *UserHandler) HandleUserRegister(c *gin.Context) {
 		pack.WriteError(c, http.StatusInternalServerError, "Failed to register user")
 		return
 	}
+	
+	// 检查注册是否成功
+	if !resp.GetSuccess() {
+		pack.WriteError(c, http.StatusBadRequest, resp.GetMessage())
+		return
+	}
 
-	pack.WriteJSON(c, http.StatusOK, "User registered successfully", resp)
+	pack.WriteJSON(c, http.StatusOK, resp.GetMessage(), resp)
 }
 
 // HandleUserLogin 处理用户登录请求

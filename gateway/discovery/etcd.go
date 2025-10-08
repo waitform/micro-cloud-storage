@@ -1,11 +1,11 @@
 package discovery
 
 import (
-	"cloud-storage/utils"
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/waitform/micro-cloud-storage/utils"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )

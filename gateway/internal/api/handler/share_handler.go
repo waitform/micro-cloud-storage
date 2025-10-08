@@ -4,12 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"cloud-storage/internal/pack"
-	"cloud-storage/internal/rpc"
-	sharepb "cloud-storage/protos/share/proto"
-	"cloud-storage/utils"
-
 	"github.com/gin-gonic/gin"
+	pack "github.com/waitform/micro-cloud-storage/internal/pack"
+	"github.com/waitform/micro-cloud-storage/internal/rpc"
+	sharepb "github.com/waitform/micro-cloud-storage/protos/share/proto"
+	utils "github.com/waitform/micro-cloud-storage/utils"
 )
 
 type ShareHandler struct {
@@ -29,6 +28,7 @@ func (h *ShareHandler) HandleCreateShare(c *gin.Context) {
 		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	req.OwnerId = c.GetString("userID").
 
 	ctx := context.Background()
 	resp, err := h.shareClient.CreateShare(ctx, &req)

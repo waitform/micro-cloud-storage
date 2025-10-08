@@ -126,6 +126,35 @@ func (w *FairRateLimitedWriter) Write(p []byte) (int, error) {
 	return w.writer.Write(p)
 }
 
+type FairRateLimitedReader struct {
+	reader   io.Reader
+	limiters []*rate.Limiter
+	ctx      context.Context
+}
+
+func NewFairRateLimitedReader(reader io.Reader, limiters ...*rate.Limiter) *FairRateLimitedReader {
+	return &FairRateLimitedReader{
+		reader:   reader,
+		limiters: limiters,
+		ctx:      context.Background(),
+	}
+}
+
+// Read 实现 io.Reader 接口
+func (r *FairRateLimitedReader) Read(p []byte) (int, error) {
+	// 等待所有限速器都有足够的令牌
+	for _, limiter := range r.limiters {
+		if limiter != nil {
+			if err := limiter.WaitN(r.ctx, len(p)); err != nil {
+				return 0, err
+			}
+		}
+	}
+
+	// 读取数据
+	return r.reader.Read(p)
+}
+
 // 自动更新速率
 func (m *FairTransferManager) UpdateRate() {
 	preRateLimit := m.globalRateLimit / m.activeCounter

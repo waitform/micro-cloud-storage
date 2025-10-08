@@ -1,4 +1,4 @@
-module cloud-storage
+module github.com/waitform/micro-cloud-storage
 
 go 1.24.5
 

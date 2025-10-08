@@ -1,27 +1,27 @@
 package main
 
 import (
-	"cloud-storage/discovery"
-	"cloud-storage/discovery/resolver"
-	"cloud-storage/global"
-	server "cloud-storage/internal/api"
-	handler "cloud-storage/internal/rpc"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"cloud-storage/utils"
-	"log"
+	"github.com/waitform/micro-cloud-storage/discovery"
+	"github.com/waitform/micro-cloud-storage/discovery/resolver"
+	"github.com/waitform/micro-cloud-storage/global"
+	"github.com/waitform/micro-cloud-storage/internal/api"
+	"github.com/waitform/micro-cloud-storage/internal/rpc"
+	"github.com/waitform/micro-cloud-storage/utils"
 )
 
 var (
 	globalCfg     *global.GlobalConfig
 	etcdClient    *discovery.EtcdClient
-	userClient    *handler.UserServiceClient
-	shareClient   *handler.ShareServiceClient
-	fileClient    *handler.FileServiceClient
-	gatewayServer *server.GatewayServer
-	serviceClient *handler.ServiceClient
+	userClient    *rpc.UserServiceClient
+	shareClient   *rpc.ShareServiceClient
+	fileClient    *rpc.FileServiceClient
+	gatewayServer *api.GatewayServer
+	serviceClient *rpc.ServiceClient
 )
 
 // 初始化日志
@@ -45,7 +45,7 @@ func initETCD() {
 	if err != nil {
 		log.Fatalf("failed to init etcd: %v", err)
 	}
-	
+
 	// 注册etcd解析器
 	resolver.RegisterEtcdResolver(etcdClient)
 }
@@ -53,11 +53,11 @@ func initETCD() {
 // 初始化服务客户端
 func initServiceClients() {
 	// 创建基础服务客户端
-	serviceClient = handler.NewServiceClient(etcdClient, globalCfg)
+	serviceClient = rpc.NewServiceClient(etcdClient, globalCfg)
 
 	// 初始化用户服务客户端
 	var err error
-	userClient, err = handler.NewUserServiceClient(serviceClient)
+	userClient, err = rpc.NewUserServiceClient(serviceClient)
 	if err != nil {
 		utils.Error("failed to init user service client: %v", err)
 	} else {
@@ -65,7 +65,7 @@ func initServiceClients() {
 	}
 
 	// 初始化分享服务客户端
-	shareClient, err = handler.NewShareServiceClient(serviceClient)
+	shareClient, err = rpc.NewShareServiceClient(serviceClient)
 	if err != nil {
 		utils.Error("failed to init share service client: %v", err)
 	} else {
@@ -73,7 +73,7 @@ func initServiceClients() {
 	}
 
 	// 初始化文件服务客户端
-	fileClient, err = handler.NewFileServiceClient(serviceClient)
+	fileClient, err = rpc.NewFileServiceClient(serviceClient)
 	if err != nil {
 		utils.Error("failed to init file service client: %v", err)
 	} else {
@@ -100,7 +100,7 @@ func closeServiceClients() {
 
 // 初始化网关服务器
 func initGatewayServer() {
-	gatewayServer = server.NewGatewayServer(userClient, shareClient, fileClient)
+	gatewayServer = api.NewGatewayServer(userClient, shareClient, fileClient)
 	utils.Info("gateway server initialized")
 }
 

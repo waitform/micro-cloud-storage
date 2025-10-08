@@ -6,9 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"cloud-storage/discovery"
-	"cloud-storage/utils"
-
+	"github.com/waitform/micro-cloud-storage/discovery"
+	"github.com/waitform/micro-cloud-storage/utils"
 	"google.golang.org/grpc/resolver"
 )
 

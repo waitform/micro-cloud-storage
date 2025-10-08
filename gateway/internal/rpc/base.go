@@ -1,11 +1,12 @@
 package rpc
 
 import (
-	"cloud-storage/discovery"
-	"cloud-storage/global"
-	"cloud-storage/utils"
 	"context"
 	"time"
+
+	"github.com/waitform/micro-cloud-storage/discovery"
+	"github.com/waitform/micro-cloud-storage/global"
+	"github.com/waitform/micro-cloud-storage/utils"
 )
 
 // ServiceClient 封装服务客户端的基础结构

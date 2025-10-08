@@ -1,11 +1,11 @@
 package rpc
 
 import (
-	sharepb "cloud-storage/protos/share/proto"
 	"context"
 	"fmt"
 	"time"
 
+	sharepb "github.com/waitform/micro-cloud-storage/protos/share/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"

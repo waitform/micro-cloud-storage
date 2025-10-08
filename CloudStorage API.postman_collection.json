@@ -269,6 +269,40 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Delete File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"file_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/file/delete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"file",
+								"delete"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -357,6 +391,40 @@
 								"api",
 								"share",
 								"validate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Download",
+			"item": [
+				{
+					"name": "Download File via Share",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/download?share_id=SHARE_ID&password=OPTIONAL_PASSWORD",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"download"
+							],
+							"query": [
+								{
+									"key": "share_id",
+									"value": "SHARE_ID"
+								},
+								{
+									"key": "password",
+									"value": "OPTIONAL_PASSWORD",
+									"disabled": true
+								}
 							]
 						}
 					},

@@ -1,11 +1,11 @@
 package rpc
 
 import (
-	filepb "cloud-storage/protos/file/proto"
 	"context"
 	"fmt"
 	"time"
 
+	filepb "github.com/waitform/micro-cloud-storage/protos/file/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"
@@ -148,4 +148,16 @@ func (f *FileServiceClient) CancelUpload(ctx context.Context, req *filepb.Cancel
 	}
 
 	return f.grpcClient.CancelUpload(ctx, req)
+}
+
+// DeleteFile 删除文件
+func (f *FileServiceClient) DeleteFile(ctx context.Context, req *filepb.DeleteRequest) (*emptypb.Empty, error) {
+	// 设置默认超时时间
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	return f.grpcClient.DeleteFile(ctx, req)
 }

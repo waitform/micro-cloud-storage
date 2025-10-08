@@ -1,11 +1,11 @@
 package rpc
 
 import (
-	userpb "cloud-storage/protos/user/proto"
 	"context"
 	"fmt"
 	"time"
 
+	userpb "github.com/waitform/micro-cloud-storage/protos/user/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"

@@ -1,19 +1,21 @@
 package api
 
 import (
-	"cloud-storage/internal/api/handler"
-	"cloud-storage/internal/router"
-	"cloud-storage/internal/rpc"
-	"cloud-storage/utils"
-
 	"github.com/gin-gonic/gin"
+	"github.com/waitform/micro-cloud-storage/internal/api/handler"
+	"github.com/waitform/micro-cloud-storage/internal/router"
+	"github.com/waitform/micro-cloud-storage/internal/rpc"
+	"github.com/waitform/micro-cloud-storage/utils"
+	"golang.org/x/time/rate"
 )
 
 // GatewayServer 网关服务器结构
 type GatewayServer struct {
-	UserHandler  *handler.UserHandler
-	ShareHandler *handler.ShareHandler
-	FileHandler  *handler.FileHandler
+	UserHandler   *handler.UserHandler
+	ShareHandler  *handler.ShareHandler
+	FileHandler   *handler.FileHandler
+	ShareClient   *rpc.ShareServiceClient
+	IPRateLimiter *utils.IPRateLimiter
 }
 
 // NewGatewayServer 创建网关服务器实例
@@ -27,10 +29,15 @@ func NewGatewayServer(
 	shareHandler := handler.NewShareHandler(shareClient)
 	fileHandler := handler.NewFileHandler(fileClient)
 
+	// 创建IP限流器 (每秒10个请求，突发20个)
+	ipRateLimiter := utils.NewIPRateLimiter(rate.Limit(10), 20)
+
 	return &GatewayServer{
-		UserHandler:  userHandler,
-		ShareHandler: shareHandler,
-		FileHandler:  fileHandler,
+		UserHandler:   userHandler,
+		ShareHandler:  shareHandler,
+		FileHandler:   fileHandler,
+		ShareClient:   shareClient,
+		IPRateLimiter: ipRateLimiter,
 	}
 }
 
@@ -47,7 +54,7 @@ func (s *GatewayServer) StartHTTPServer(addr string) error {
 	r.Use(gin.Recovery())
 
 	// 注册路由，直接传递handler实例
-	router.RegisterRoutes(r, s.UserHandler, s.ShareHandler, s.FileHandler)
+	router.RegisterRoutes(r, s.UserHandler, s.ShareHandler, s.FileHandler, s.ShareClient, s.IPRateLimiter)
 
 	utils.Info("HTTP server starting on %s", addr)
 	return r.Run(addr)

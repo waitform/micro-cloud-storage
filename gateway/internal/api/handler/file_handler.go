@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"cloud-storage/internal/pack"
-	"cloud-storage/internal/rpc"
-	filepb "cloud-storage/protos/file/proto"
-	"cloud-storage/utils"
+	pack "github.com/waitform/micro-cloud-storage/internal/pack"
+	"github.com/waitform/micro-cloud-storage/internal/rpc"
+	filepb "github.com/waitform/micro-cloud-storage/protos/file/proto"
+	utils "github.com/waitform/micro-cloud-storage/utils"
+	"golang.org/x/time/rate"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,8 +86,18 @@ func (h *FileHandler) HandleCompleteUpload(c *gin.Context) {
 
 // HandleGetFileInfo 处理获取文件信息请求
 func (h *FileHandler) HandleGetFileInfo(c *gin.Context) {
-	// 从查询参数获取文件ID
+	// 首先尝试从查询参数获取文件ID
 	fileIDStr := c.Query("file_id")
+
+	// 如果查询参数中没有file_id，则尝试从上下文中获取（来自分享鉴权中间件）
+	if fileIDStr == "" {
+		if fileIDVal, exists := c.Get("file_id"); exists {
+			// 从分享鉴权中间件中获取的file_id
+			fileIDStr = strconv.FormatInt(fileIDVal.(int64), 10)
+		}
+	}
+
+	// 如果仍然没有file_id，则返回错误
 	if fileIDStr == "" {
 		pack.WriteError(c, http.StatusBadRequest, "Missing file_id parameter")
 		return
@@ -155,8 +166,13 @@ func (h *FileHandler) HandleDirectUpload(c *gin.Context) {
 	}
 	defer src.Close()
 
+	globalLimiter, _ := c.Get("global_limiter")
+	userLimiter, _ := c.Get("user_limiter")
+
+	limiterReader := utils.NewFairRateLimitedReader(src, globalLimiter.(*rate.Limiter), userLimiter.(*rate.Limiter))
+
 	// 读取文件内容并计算MD5
-	fileData, err := io.ReadAll(src)
+	fileData, err := io.ReadAll(limiterReader)
 	if err != nil {
 		pack.WriteError(c, http.StatusInternalServerError, "Failed to read file")
 		return
@@ -298,4 +314,66 @@ func (h *FileHandler) HandleCancelUpload(c *gin.Context) {
 	}
 
 	pack.WriteJSON(c, http.StatusOK, "Upload cancelled successfully", nil)
+}
+
+// HandleDownloadFile 处理文件下载请求
+func (h *FileHandler) HandleDownloadFile(c *gin.Context) {
+	// 首先尝试从查询参数获取文件ID
+	fileIDStr := c.Query("file_id")
+
+	// 如果查询参数中没有file_id，则尝试从上下文中获取（来自分享鉴权中间件）
+	if fileIDStr == "" {
+		if fileIDVal, exists := c.Get("file_id"); exists {
+			// 从分享鉴权中间件中获取的file_id
+			fileIDStr = strconv.FormatInt(fileIDVal.(int64), 10)
+		}
+	}
+
+	// 如果仍然没有file_id，则返回错误
+	if fileIDStr == "" {
+		pack.WriteError(c, http.StatusBadRequest, "Missing file_id parameter")
+		return
+	}
+
+	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
+	if err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid file_id parameter")
+		return
+	}
+
+	// 生成预签名URL用于下载
+	req := &filepb.GeneratePresignedURLRequest{
+		FileId:        fileID,
+		ExpireSeconds: 3600, // 1小时过期时间
+	}
+
+	ctx := context.Background()
+	resp, err := h.fileClient.GeneratePresignedURL(ctx, req)
+	if err != nil {
+		utils.Error("Failed to generate presigned URL: %v", err)
+		pack.WriteError(c, http.StatusInternalServerError, "Failed to generate download link")
+		return
+	}
+
+	// 重定向到预签名URL
+	c.Redirect(http.StatusFound, resp.GetUrl())
+}
+
+// HandleDeleteFile 处理删除文件请求
+func (h *FileHandler) HandleDeleteFile(c *gin.Context) {
+	var req filepb.DeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	ctx := context.Background()
+	_, err := h.fileClient.DeleteFile(ctx, &req)
+	if err != nil {
+		utils.Error("Failed to delete file: %v", err)
+		pack.WriteError(c, http.StatusInternalServerError, "Failed to delete file")
+		return
+	}
+
+	pack.WriteJSON(c, http.StatusOK, "File deleted successfully", nil)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	jwtSecret = []byte("cloud-storage-secret-key") // 实际项目中应该从配置文件读取
+	jwtSecret = []byte("cloud-storage-user-service-secret-key") // 实际项目中应该从配置文件读取
 )
 
 // Claims 定义JWT声明结构
@@ -115,8 +115,8 @@ func GetUsernameFromToken(tokenString string) (string, error) {
 
 // ShareClaims 定义分享JWT声明结构
 type ShareClaims struct {
-	ShareID   uint   `json:"share_id"`
-	Token     string `json:"token"`
+	ShareID uint   `json:"share_id"`
+	Token   string `json:"token"`
 	jwt.RegisteredClaims
 }
 
