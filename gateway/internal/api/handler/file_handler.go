@@ -12,7 +12,6 @@ import (
 	"github.com/waitform/micro-cloud-storage/internal/rpc"
 	filepb "github.com/waitform/micro-cloud-storage/protos/file/proto"
 	utils "github.com/waitform/micro-cloud-storage/utils"
-	"golang.org/x/time/rate"
 
 	"github.com/gin-gonic/gin"
 )
@@ -166,11 +165,11 @@ func (h *FileHandler) HandleDirectUpload(c *gin.Context) {
 	}
 	defer src.Close()
 
-	globalLimiter, _ := c.Get("global_limiter")
-	userLimiter, _ := c.Get("user_limiter")
+	// globalLimiter, _ := c.Get("global_limiter")
+	// userLimiter, _ := c.Get("user_limiter")
 
-	limiterReader := utils.NewFairRateLimitedReader(src, globalLimiter.(*rate.Limiter), userLimiter.(*rate.Limiter))
-
+	// limiterReader := utils.NewFairRateLimitedReader(src, globalLimiter.(*rate.Limiter), userLimiter.(*rate.Limiter))
+	limiterReader := src
 	// 读取文件内容并计算MD5
 	fileData, err := io.ReadAll(limiterReader)
 	if err != nil {

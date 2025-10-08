@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -115,6 +117,14 @@ func startHTTPServer() {
 	}()
 	utils.Info("HTTP server started on 0.0.0.0:8080")
 }
+func startPprofServer() {
+	go func() {
+		utils.Info("starting pprof server on 0.0.0.0:6060")
+		if err := http.ListenAndServe(":6060", nil); err != nil {
+			utils.Error("failed to start pprof server: %v", err)
+		}
+	}()
+}
 
 // 统一入口
 func main() {
@@ -133,7 +143,7 @@ func main() {
 	// 启动HTTP服务器
 	startHTTPServer()
 
-	utils.Info("gateway started successfully")
+	startPprofServer()
 
 	// 等待中断信号以优雅关闭服务器
 	quit := make(chan os.Signal, 1)

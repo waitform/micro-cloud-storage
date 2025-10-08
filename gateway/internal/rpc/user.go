@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc/keepalive"
+
 	userpb "github.com/waitform/micro-cloud-storage/protos/user/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
@@ -25,6 +27,11 @@ func NewUserServiceClient(serviceClient *ServiceClient) (*UserServiceClient, err
 	conn, err := grpc.Dial(target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                20 * time.Second,  // 每20秒发送一次ping
+			Timeout:             3 * time.Second,   // ping超时时间
+			PermitWithoutStream: true,              // 允许在没有活跃流时发送ping
+		}),
 		grpc.WithBlock(),
 	)
 	if err != nil {

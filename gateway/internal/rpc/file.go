@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc/keepalive"
+
 	filepb "github.com/waitform/micro-cloud-storage/protos/file/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
@@ -30,6 +32,11 @@ func NewFileServiceClient(serviceClient *ServiceClient) (*FileServiceClient, err
 			grpc.MaxCallRecvMsgSize(10*1024*1024),
 			grpc.MaxCallSendMsgSize(10*1024*1024),
 		),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                20 * time.Second,  // 每20秒发送一次ping
+			Timeout:             3 * time.Second,   // ping超时时间
+			PermitWithoutStream: true,              // 允许在没有活跃流时发送ping
+		}),
 		grpc.WithBlock(),
 	)
 	if err != nil {
@@ -68,12 +75,6 @@ func (f *FileServiceClient) InitUpload(ctx context.Context, req *filepb.InitUplo
 
 // UploadPart 上传分片
 func (f *FileServiceClient) UploadPart(ctx context.Context, req *filepb.UploadPartRequest) (*emptypb.Empty, error) {
-	// 设置默认超时时间
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-	}
 
 	return f.grpcClient.UploadPart(ctx, req)
 }
@@ -152,12 +153,6 @@ func (f *FileServiceClient) CancelUpload(ctx context.Context, req *filepb.Cancel
 
 // DeleteFile 删除文件
 func (f *FileServiceClient) DeleteFile(ctx context.Context, req *filepb.DeleteRequest) (*emptypb.Empty, error) {
-	// 设置默认超时时间
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-	}
 
 	return f.grpcClient.DeleteFile(ctx, req)
 }

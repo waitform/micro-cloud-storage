@@ -39,7 +39,7 @@ const (
 // 文件服务接口
 type FileServiceClient interface {
 	InitUpload(ctx context.Context, in *InitUploadRequest, opts ...grpc.CallOption) (*InitUploadResponse, error)
-	UploadPart(ctx context.Context, in *UploadPartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UploadPart(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadPartRequest, emptypb.Empty], error)
 	CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error)
 	DownloadPart(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadResponse], error)
 	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -68,15 +68,18 @@ func (c *fileServiceClient) InitUpload(ctx context.Context, in *InitUploadReques
 	return out, nil
 }
 
-func (c *fileServiceClient) UploadPart(ctx context.Context, in *UploadPartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *fileServiceClient) UploadPart(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadPartRequest, emptypb.Empty], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, FileService_UploadPart_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[0], FileService_UploadPart_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[UploadPartRequest, emptypb.Empty]{ClientStream: stream}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_UploadPartClient = grpc.ClientStreamingClient[UploadPartRequest, emptypb.Empty]
 
 func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -90,7 +93,7 @@ func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUplo
 
 func (c *fileServiceClient) DownloadPart(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[0], FileService_DownloadPart_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[1], FileService_DownloadPart_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +177,7 @@ func (c *fileServiceClient) CancelUpload(ctx context.Context, in *CancelUploadRe
 // 文件服务接口
 type FileServiceServer interface {
 	InitUpload(context.Context, *InitUploadRequest) (*InitUploadResponse, error)
-	UploadPart(context.Context, *UploadPartRequest) (*emptypb.Empty, error)
+	UploadPart(grpc.ClientStreamingServer[UploadPartRequest, emptypb.Empty]) error
 	CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error)
 	DownloadPart(*DownloadRequest, grpc.ServerStreamingServer[DownloadResponse]) error
 	DeleteFile(context.Context, *DeleteRequest) (*emptypb.Empty, error)
@@ -196,8 +199,8 @@ type UnimplementedFileServiceServer struct{}
 func (UnimplementedFileServiceServer) InitUpload(context.Context, *InitUploadRequest) (*InitUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitUpload not implemented")
 }
-func (UnimplementedFileServiceServer) UploadPart(context.Context, *UploadPartRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UploadPart not implemented")
+func (UnimplementedFileServiceServer) UploadPart(grpc.ClientStreamingServer[UploadPartRequest, emptypb.Empty]) error {
+	return status.Errorf(codes.Unimplemented, "method UploadPart not implemented")
 }
 func (UnimplementedFileServiceServer) CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CompleteUpload not implemented")
@@ -262,23 +265,12 @@ func _FileService_InitUpload_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileService_UploadPart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadPartRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FileServiceServer).UploadPart(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FileService_UploadPart_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).UploadPart(ctx, req.(*UploadPartRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+func _FileService_UploadPart_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FileServiceServer).UploadPart(&grpc.GenericServerStream[UploadPartRequest, emptypb.Empty]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_UploadPartServer = grpc.ClientStreamingServer[UploadPartRequest, emptypb.Empty]
 
 func _FileService_CompleteUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CompleteUploadRequest)
@@ -429,10 +421,6 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FileService_InitUpload_Handler,
 		},
 		{
-			MethodName: "UploadPart",
-			Handler:    _FileService_UploadPart_Handler,
-		},
-		{
 			MethodName: "CompleteUpload",
 			Handler:    _FileService_CompleteUpload_Handler,
 		},
@@ -462,6 +450,11 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadPart",
+			Handler:       _FileService_UploadPart_Handler,
+			ClientStreams: true,
+		},
 		{
 			StreamName:    "DownloadPart",
 			Handler:       _FileService_DownloadPart_Handler,

@@ -1033,12 +1033,12 @@ const file_file_proto_rawDesc = "" +
 	"\x1aGetIncompletePartsResponse\x12#\n" +
 	"\rmissing_parts\x18\x01 \x03(\x05R\fmissingParts\".\n" +
 	"\x13CancelUploadRequest\x12\x17\n" +
-	"\afile_id\x18\x01 \x01(\x03R\x06fileId2\xf3\x06\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId2\xf5\x06\n" +
 	"\vFileService\x12O\n" +
 	"\n" +
-	"InitUpload\x12\x1f.file_service.InitUploadRequest\x1a .file_service.InitUploadResponse\x12E\n" +
+	"InitUpload\x12\x1f.file_service.InitUploadRequest\x1a .file_service.InitUploadResponse\x12G\n" +
 	"\n" +
-	"UploadPart\x12\x1f.file_service.UploadPartRequest\x1a\x16.google.protobuf.Empty\x12[\n" +
+	"UploadPart\x12\x1f.file_service.UploadPartRequest\x1a\x16.google.protobuf.Empty(\x01\x12[\n" +
 	"\x0eCompleteUpload\x12#.file_service.CompleteUploadRequest\x1a$.file_service.CompleteUploadResponse\x12O\n" +
 	"\fDownloadPart\x12\x1d.file_service.DownloadRequest\x1a\x1e.file_service.DownloadResponse0\x01\x12A\n" +
 	"\n" +

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	pack "github.com/waitform/micro-cloud-storage/internal/pack"
@@ -28,7 +29,14 @@ func (h *ShareHandler) HandleCreateShare(c *gin.Context) {
 		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	req.OwnerId = c.GetString("userID").
+	userIDStr := c.GetString("user_id")
+	ownerID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		utils.Error("Failed to parse user ID: %v", err)
+		pack.WriteError(c, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+	req.OwnerId = ownerID
 
 	ctx := context.Background()
 	resp, err := h.shareClient.CreateShare(ctx, &req)

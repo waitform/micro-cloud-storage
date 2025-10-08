@@ -377,7 +377,7 @@ func (s *StorageService) DeleteFile(ctx context.Context, fileID int64) error {
 	if err != nil {
 		return err
 	}
-
+	// 删除分片
 	for _, p := range parts {
 		objName := fmt.Sprintf("%s.part.%d", file.ObjectName, p.PartNumber)
 		err := s.client.RemoveObject(ctx, s.bucket, objName, minio.RemoveObjectOptions{})
@@ -425,12 +425,12 @@ func (s *StorageService) GetFileInfo(ctx context.Context, fileID int64) (*model.
 	if err != nil {
 		return nil, fmt.Errorf("获取文件信息失败: %v", err)
 	}
-	
+
 	// 检查文件状态
 	if file.Status != 1 {
 		return nil, fmt.Errorf("文件未完成上传或不可用")
 	}
-	
+
 	return file, nil
 }
 

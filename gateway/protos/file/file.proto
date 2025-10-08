@@ -106,7 +106,7 @@ message CancelUploadRequest {
 // 文件服务接口
 service FileService {
   rpc InitUpload(InitUploadRequest) returns (InitUploadResponse);
-  rpc UploadPart(UploadPartRequest) returns (google.protobuf.Empty);
+  rpc UploadPart(stream UploadPartRequest) returns (google.protobuf.Empty);
   rpc CompleteUpload(CompleteUploadRequest) returns (CompleteUploadResponse);
   rpc DownloadPart(DownloadRequest) returns (stream DownloadResponse);
   rpc DeleteFile(DeleteRequest) returns (google.protobuf.Empty);
