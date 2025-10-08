@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/grpc/keepalive"
@@ -33,9 +34,9 @@ func NewFileServiceClient(serviceClient *ServiceClient) (*FileServiceClient, err
 			grpc.MaxCallSendMsgSize(10*1024*1024),
 		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                20 * time.Second,  // 每20秒发送一次ping
-			Timeout:             3 * time.Second,   // ping超时时间
-			PermitWithoutStream: true,              // 允许在没有活跃流时发送ping
+			Time:                20 * time.Second, // 每20秒发送一次ping
+			Timeout:             3 * time.Second,  // ping超时时间
+			PermitWithoutStream: true,             // 允许在没有活跃流时发送ping
 		}),
 		grpc.WithBlock(),
 	)
@@ -66,7 +67,7 @@ func (f *FileServiceClient) InitUpload(ctx context.Context, req *filepb.InitUplo
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -75,16 +76,85 @@ func (f *FileServiceClient) InitUpload(ctx context.Context, req *filepb.InitUplo
 
 // UploadPart 上传分片
 func (f *FileServiceClient) UploadPart(ctx context.Context, req *filepb.UploadPartRequest) (*emptypb.Empty, error) {
+	// 为上传分片设置更长的超时时间，因为可能涉及大文件传输
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+	}
 
-	return f.grpcClient.UploadPart(ctx, req)
+	// 创建流
+	stream, err := f.grpcClient.UploadPart(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 发送请求
+	err = stream.Send(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 关闭流并接收响应
+	return stream.CloseAndRecv()
+}
+
+func (f *FileServiceClient) UploadPartStream(ctx context.Context, fileID int64, partNumber int32, reader io.Reader, partMD5 string) (*emptypb.Empty, error) {
+	// 超时控制
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+	}
+
+	stream, err := f.grpcClient.UploadPart(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 先发送元数据
+	metadata := &filepb.UploadPartRequest{
+		FileId:     fileID,
+		PartNumber: partNumber,
+		Md5:        partMD5,
+		Data:       []byte{}, // 空数据表示这是元数据消息
+	}
+
+	if sendErr := stream.Send(metadata); sendErr != nil {
+		return nil, sendErr
+	}
+
+	// 然后发送数据流
+	buf := make([]byte, 512*1024) // 0.5MB
+	for {
+		n, err := reader.Read(buf)
+		if n > 0 {
+			dataChunk := &filepb.UploadPartRequest{
+				Data: buf[:n],
+			}
+
+			if sendErr := stream.Send(dataChunk); sendErr != nil {
+				return nil, sendErr
+			}
+		}
+
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return stream.CloseAndRecv()
 }
 
 // CompleteUpload 完成上传
 func (f *FileServiceClient) CompleteUpload(ctx context.Context, req *filepb.CompleteUploadRequest) (*filepb.CompleteUploadResponse, error) {
-	// 设置默认超时时间
+	// 设置默认超时时间，完成上传可能需要合并大量分片，所以设置较长超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 	}
 
@@ -96,7 +166,7 @@ func (f *FileServiceClient) GetFileInfo(ctx context.Context, req *filepb.GetFile
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -108,7 +178,7 @@ func (f *FileServiceClient) GeneratePresignedURL(ctx context.Context, req *filep
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -120,7 +190,7 @@ func (f *FileServiceClient) GetUploadProgress(ctx context.Context, req *filepb.G
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -132,7 +202,7 @@ func (f *FileServiceClient) GetIncompleteParts(ctx context.Context, req *filepb.
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -144,7 +214,7 @@ func (f *FileServiceClient) CancelUpload(ctx context.Context, req *filepb.Cancel
 	// 设置默认超时时间
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -153,6 +223,12 @@ func (f *FileServiceClient) CancelUpload(ctx context.Context, req *filepb.Cancel
 
 // DeleteFile 删除文件
 func (f *FileServiceClient) DeleteFile(ctx context.Context, req *filepb.DeleteRequest) (*emptypb.Empty, error) {
+	// 设置默认超时时间
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+	}
 
 	return f.grpcClient.DeleteFile(ctx, req)
 }

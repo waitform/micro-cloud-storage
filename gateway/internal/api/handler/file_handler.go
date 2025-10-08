@@ -47,21 +47,41 @@ func (h *FileHandler) HandleInitUpload(c *gin.Context) {
 
 // HandleUploadPart 处理上传分片请求
 func (h *FileHandler) HandleUploadPart(c *gin.Context) {
-	var req filepb.UploadPartRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		pack.WriteError(c, http.StatusBadRequest, "Invalid request body")
+	// 从请求头获取元数据
+	fileIDStr := c.GetHeader("X-File-Id")
+	partNumberStr := c.GetHeader("X-Part-Number")
+	md5Str := c.GetHeader("X-MD5")
+
+	// 验证必需的头部信息
+	if fileIDStr == "" || partNumberStr == "" || md5Str == "" {
+		pack.WriteError(c, http.StatusBadRequest, "Missing required headers: X-File-Id, X-Part-Number, X-MD5")
 		return
 	}
 
+	fileID, err := strconv.ParseInt(fileIDStr, 10, 64)
+	if err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid file ID")
+		return
+	}
+
+	partNumber, err := strconv.ParseInt(partNumberStr, 10, 32)
+	if err != nil {
+		pack.WriteError(c, http.StatusBadRequest, "Invalid part number")
+		return
+	}
+
+	// 限制上传大小，防止恶意上传
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 100*1024*1024) // 限制为100MB
+
 	ctx := context.Background()
-	resp, err := h.fileClient.UploadPart(ctx, &req)
+	_, err = h.fileClient.UploadPartStream(ctx, fileID, int32(partNumber), c.Request.Body, md5Str)
 	if err != nil {
 		utils.Error("Failed to upload part: %v", err)
 		pack.WriteError(c, http.StatusInternalServerError, "Failed to upload part")
 		return
 	}
 
-	pack.WriteJSON(c, http.StatusOK, "Part uploaded successfully", resp)
+	pack.WriteJSON(c, http.StatusOK, "Part uploaded successfully", gin.H{})
 }
 
 // HandleCompleteUpload 处理完成上传请求

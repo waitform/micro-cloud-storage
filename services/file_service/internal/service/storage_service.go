@@ -114,11 +114,13 @@ func (s *StorageService) InitUpload(ctx context.Context, fileName string, size i
 
 // UploadPart 上传分片
 func (s *StorageService) UploadPart(ctx context.Context, fileID int64, partNumber int, data []byte, clientMD5 string) error {
+	// 为了减少内存使用，我们直接使用传入的数据进行计算，而不是创建新的副本
 	hash := md5.Sum(data)
 	md5Str := hex.EncodeToString(hash[:])
 	if md5Str != clientMD5 {
 		return fmt.Errorf("数据校验失败")
 	}
+
 	file, err := s.fileDAO.GetFileByID(fileID)
 	if err != nil {
 		return fmt.Errorf("找不到文件记录: %v", err)
@@ -126,6 +128,7 @@ func (s *StorageService) UploadPart(ctx context.Context, fileID int64, partNumbe
 
 	partObject := fmt.Sprintf("%s.part.%d", file.ObjectName, partNumber)
 
+	// 直接使用传入的数据进行上传，避免额外的内存分配
 	info, err := s.client.PutObject(ctx, s.bucket, partObject, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("上传分片失败: %v", err)

@@ -167,3 +167,12 @@ logs-share:
 logs-gateway:
 	@echo "查看网关服务日志:"
 	@tail -f gateway/gateway.log
+
+.PHONY: test-file-chunked
+test-file-chunked:
+	@echo "Running chunked file upload test..."
+	@cd gateway/test && go test -v chunkedupload_test.go
+
+test-file-concurrent:
+	@echo "Running concurrent chunked file upload test..."
+	@cd gateway/test && go test -v concurrent_chunked_upload_test.go -concurrent=20 -filesize=5

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/waitform/micro-cloud-storage/internal/api/handler"
 	"github.com/waitform/micro-cloud-storage/internal/router"
@@ -52,10 +55,17 @@ func (s *GatewayServer) StartHTTPServer(addr string) error {
 	// 添加日志和恢复中间件
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-
+	server := &http.Server{
+		Addr:           addr,
+		Handler:        r,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		IdleTimeout:    30 * time.Second,
+		MaxHeaderBytes: 1 << 20, // 1MB
+	}
 	// 注册路由，直接传递handler实例
 	router.RegisterRoutes(r, s.UserHandler, s.ShareHandler, s.FileHandler, s.ShareClient, s.IPRateLimiter)
 
 	utils.Info("HTTP server starting on %s", addr)
-	return r.Run(addr)
+	return server.ListenAndServe()
 }

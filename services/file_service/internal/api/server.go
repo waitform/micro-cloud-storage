@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"io"
 
 	"cloud-storage-file-service/internal/service"
 	filepb "cloud-storage-file-service/proto"
@@ -37,12 +38,49 @@ func (s *FileServiceServer) InitUpload(ctx context.Context, req *filepb.InitUplo
 	}, nil
 }
 
-func (s *FileServiceServer) UploadPart(ctx context.Context, req *filepb.UploadPartRequest) (*emptypb.Empty, error) {
-	err := s.storage.UploadPart(ctx, req.FileId, int(req.PartNumber), req.Data, req.Md5)
-	if err != nil {
-		return nil, err
+func (s *FileServiceServer) UploadPart(stream filepb.FileService_UploadPartServer) error {
+	var fileID int64
+	var partNumber int32
+	var md5Str string
+	var receivedData []byte
+	
+	// 接收流中的数据
+	firstMessage := true
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		
+		// 处理第一个消息（包含元数据）
+		if firstMessage {
+			fileID = req.FileId
+			partNumber = req.PartNumber
+			md5Str = req.Md5
+			firstMessage = false
+			
+			// 如果这是仅包含元数据的消息（没有实际数据），则跳过
+			if len(req.Data) == 0 {
+				continue
+			}
+			// 如果消息中包含数据，则处理数据
+		}
+		
+		// 累积数据
+		receivedData = append(receivedData, req.Data...)
 	}
-	return &emptypb.Empty{}, nil
+	
+	// 调用存储服务上传分片
+	err := s.storage.UploadPart(stream.Context(), fileID, int(partNumber), receivedData, md5Str)
+	if err != nil {
+		return err
+	}
+	
+	// 发送响应
+	return stream.SendAndClose(&emptypb.Empty{})
 }
 
 func (s *FileServiceServer) CompleteUpload(ctx context.Context, req *filepb.CompleteUploadRequest) (*filepb.CompleteUploadResponse, error) {
