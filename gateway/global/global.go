@@ -23,15 +23,21 @@ type MinioConfig struct {
 	SecretKey string `yaml:"secretKey"`
 	UseSSL    bool   `yaml:"useSSL"`
 }
+type DatabaseConfig struct {
+	DSN string `yaml:"dsn"`
+}
 
 // GlobalConfig 全局配置结构
 type GlobalConfig struct {
-	Etcd  EtcdConfig  `yaml:"etcd"`
-	Minio MinioConfig `yaml:"minio"`
+	Etcd     EtcdConfig     `yaml:"etcd"`
+	Minio    MinioConfig    `yaml:"minio"`
+	Database DatabaseConfig `yaml:"database"`
 }
 
+const configPath = "/home/haobin/桌面/test/go_test/micro-cloud-storage/gateway/global/global.yaml"
+
 // LoadConfig 加载全局配置文件
-func LoadConfig(configPath string) (*GlobalConfig, error) {
+func LoadConfig() (*GlobalConfig, error) {
 	// 获取配置文件的绝对路径
 	absPath, err := filepath.Abs(configPath)
 	if err != nil {

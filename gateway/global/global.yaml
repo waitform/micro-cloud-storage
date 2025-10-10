@@ -21,3 +21,6 @@ minio:
   secretKey: "minioadmin"
   # 是否使用SSL
   useSSL: false
+
+database:
+  dsn: "cloud-storage:cloud-storage@tcp(localhost:3307)/cloud-storage?charset=utf8mb4&parseTime=True&loc=Local"

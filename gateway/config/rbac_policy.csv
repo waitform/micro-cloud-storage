@@ -1,0 +1,17 @@
+# 用户直接的资源访问权限
+p, user_1, file:1, read
+p, user_1, file:1, write
+p, user_1, file:1, delete
+p, user_2, file:2, read
+
+# 角色权限
+p, admin, file:*, read
+p, admin, file:*, write
+p, admin, file:*, delete
+
+p, owner, file:*, read
+p, owner, file:*, write
+p, owner, file:*, delete
+
+# 用户与角色关系
+g, user_1, admin

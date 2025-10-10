@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"cloud-storage-file-service/internal/model"
+	"cloud-storage-file-service/utils"
 
 	"context"
 	"crypto/md5"
@@ -91,7 +92,21 @@ func (s *StorageService) UploadFileDirectly(ctx context.Context, fileName string
 func (s *StorageService) InitUpload(ctx context.Context, fileName string, size int64, md5 string, userID int64) (*model.File, error) {
 	existedFile, err := s.fileDAO.GetFileByMD5(md5)
 	if err == nil && existedFile != nil {
-		return existedFile, nil
+		file := &model.File{
+			FileName:   fileName,
+			Bucket:     s.bucket,
+			ObjectName: existedFile.ObjectName,
+			Size:       size,
+			Md5:        md5,
+			Status:     1, // 已完成
+			CreatedAt:  time.Now(),
+			UserID:     userID,
+		}
+		if err := s.fileDAO.CreateFile(file); err != nil {
+			return nil, fmt.Errorf("创建文件记录失败: %v", err)
+		}
+		return file, nil
+
 	}
 	objectName := fmt.Sprintf("uploads/%s", fileName)
 
@@ -143,6 +158,57 @@ func (s *StorageService) UploadPart(ctx context.Context, fileID int64, partNumbe
 	}
 
 	return s.fileDAO.SavePart(part)
+}
+
+// UploadPartStream
+func (s *StorageService) UploadPartStream(
+	ctx context.Context,
+	fileID int64,
+	partNumber int,
+	partSize int64,
+	reader io.Reader,
+	clientMD5 string,
+) error {
+	// 获取文件记录
+	file, err := s.fileDAO.GetFileByID(fileID)
+	if err != nil {
+		return fmt.Errorf("找不到文件记录: %v", err)
+	}
+
+	partObject := fmt.Sprintf("%s.part.%d", file.ObjectName, partNumber)
+
+	// === 1️⃣ 边读边计算MD5 + 统计总大小 ===
+	hash := md5.New()
+	teeReader := io.TeeReader(reader, hash)
+
+	// 为 PutObject 估算大小（MinIO 要求传入 size，可以用 -1 表示未知大小）
+	info, err := s.client.PutObject(ctx, s.bucket, partObject, teeReader, partSize, minio.PutObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("上传分片失败: %v", err)
+	}
+
+	// === 2️⃣ 上传完成后计算 MD5 校验 ===
+	serverMD5 := hex.EncodeToString(hash.Sum(nil))
+	if clientMD5 != "" && serverMD5 != clientMD5 {
+		return fmt.Errorf("MD5 校验失败: client=%s, server=%s", clientMD5, serverMD5)
+	}
+
+	// === 3️⃣ 保存数据库分片信息 ===
+	part := &model.FilePart{
+		FileID:     file.ID,
+		PartNumber: partNumber,
+		ETag:       info.ETag,
+		UploadedAt: time.Now(),
+	}
+
+	if err := s.fileDAO.SavePart(part); err != nil {
+		return fmt.Errorf("保存分片信息失败: %v", err)
+	}
+
+	utils.Info("[UploadPart] 文件ID=%d 分片=%d 上传完成, MD5校验通过, 大小=%.2fMB",
+		fileID, partNumber, float64(info.Size)/1024/1024)
+
+	return nil
 }
 
 // 上传分片并发

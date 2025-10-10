@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/waitform/micro-cloud-storage/internal/api/handler"
+	"github.com/waitform/micro-cloud-storage/internal/casbin"
 	"github.com/waitform/micro-cloud-storage/internal/middleware"
 	"github.com/waitform/micro-cloud-storage/internal/rpc"
 	"github.com/waitform/micro-cloud-storage/utils"
@@ -25,6 +26,13 @@ func RegisterRoutes(r *gin.Engine,
 	// 创建IP限流中间件实例
 	ipRateLimitMiddleware := middleware.IPRateLimitMiddleware(ipRateLimiter)
 
+	//casbin文件鉴权中间件
+	casbinMW, err := middleware.NewCasbinMiddleware(casbin.GetEnforcer())
+	if err != nil {
+		panic(err)
+	}
+	casbinMW.RequirePermission("file", "file_id", "download")
+
 	// 注册用户相关路由
 	userGroup := r.Group("/api/user")
 	{
@@ -46,11 +54,11 @@ func RegisterRoutes(r *gin.Engine,
 	// 在路由组上统一应用认证中间件，避免重复调用
 	fileGroup.Use(userAuthMiddleware)
 	{
-		fileGroup.POST("/direct-upload", fileHandler.HandleDirectUpload)
+		// fileGroup.POST("/direct-upload", fileHandler.HandleDirectUpload)
 		fileGroup.POST("/upload/init", fileHandler.HandleInitUpload)
 		fileGroup.POST("/upload/part", fileHandler.HandleUploadPart)
 		fileGroup.POST("/upload/complete", fileHandler.HandleCompleteUpload)
-		fileGroup.GET("/info", fileHandler.HandleGetFileInfo)
+		fileGroup.GET("/info", casbinMW.RequirePermission("file", "file_id", "read"), fileHandler.HandleGetFileInfo)
 		fileGroup.POST("/presigned-url", fileHandler.HandleGeneratePresignedURL)
 		fileGroup.GET("/upload/progress", fileHandler.HandleGetUploadProgress)
 		fileGroup.POST("/upload/incomplete-parts", fileHandler.HandleGetIncompleteParts)

@@ -12,6 +12,7 @@ import (
 	"github.com/waitform/micro-cloud-storage/discovery/resolver"
 	"github.com/waitform/micro-cloud-storage/global"
 	"github.com/waitform/micro-cloud-storage/internal/api"
+	"github.com/waitform/micro-cloud-storage/internal/casbin"
 	"github.com/waitform/micro-cloud-storage/internal/rpc"
 	"github.com/waitform/micro-cloud-storage/utils"
 )
@@ -34,7 +35,7 @@ func InitLogger() {
 // 加载全局配置
 func LoadGlobalCfg() {
 	var err error
-	globalCfg, err = global.LoadConfig("/home/haobin/桌面/test/go_test/cloud-storage/gateway/global/global.yaml")
+	globalCfg, err = global.LoadConfig()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
@@ -104,6 +105,9 @@ func closeServiceClients() {
 func initGatewayServer() {
 	gatewayServer = api.NewGatewayServer(userClient, shareClient, fileClient)
 	utils.Info("gateway server initialized")
+}
+func initCasbin() {
+	casbin.InitCasbin()
 }
 
 // 启动HTTP服务器

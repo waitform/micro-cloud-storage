@@ -1,11 +1,13 @@
 package api
 
 import (
-	"context"
-	"io"
-
 	"cloud-storage-file-service/internal/service"
 	filepb "cloud-storage-file-service/proto"
+	"cloud-storage-file-service/utils"
+	"context"
+	"fmt"
+	"io"
+
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -39,47 +41,87 @@ func (s *FileServiceServer) InitUpload(ctx context.Context, req *filepb.InitUplo
 }
 
 func (s *FileServiceServer) UploadPart(stream filepb.FileService_UploadPartServer) error {
-	var fileID int64
-	var partNumber int32
-	var md5Str string
-	var receivedData []byte
-	
-	// 接收流中的数据
-	firstMessage := true
-	for {
-		req, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		
-		// 处理第一个消息（包含元数据）
-		if firstMessage {
-			fileID = req.FileId
-			partNumber = req.PartNumber
-			md5Str = req.Md5
-			firstMessage = false
-			
-			// 如果这是仅包含元数据的消息（没有实际数据），则跳过
-			if len(req.Data) == 0 {
-				continue
+	var (
+		fileID     int64
+		partNumber int32
+		partSize   int64
+		md5Str     string
+		gotMeta    bool
+	)
+	gotMetaCh := make(chan error, 1)
+	reader, writer := io.Pipe()
+
+	// ✅ 启动协程异步接收客户端流
+	go func() {
+		defer writer.Close()
+
+		for {
+			req, err := stream.Recv()
+			if err == io.EOF {
+				break
 			}
-			// 如果消息中包含数据，则处理数据
+			if err != nil {
+				writer.CloseWithError(err)
+				return
+			}
+
+			switch part := req.PartData.(type) {
+
+			// 🟢 收到元数据
+			case *filepb.UploadPartRequest_PartMetadata:
+				meta := part.PartMetadata
+				fileID = meta.FileId
+				partNumber = int32(meta.PartNumber)
+				partSize = meta.Size
+				md5Str = meta.Md5
+				gotMeta = true
+
+				// 日志方便排查
+				utils.Info("[UploadPart] 接收到元数据: fileID=%d, part=%d, size=%d, md5=%s",
+					fileID, partNumber, partSize, md5Str)
+				gotMetaCh <- nil
+
+			// 🟢 收到分片数据
+			case *filepb.UploadPartRequest_PartContent:
+				if !gotMeta {
+					writer.CloseWithError(fmt.Errorf("未先接收 PartMetadata"))
+					return
+				}
+				content := part.PartContent
+				if len(content.Data) > 0 {
+					if _, err := writer.Write(content.Data); err != nil {
+						writer.CloseWithError(err)
+						return
+					}
+				}
+
+			default:
+				writer.CloseWithError(fmt.Errorf("未知的消息类型"))
+				return
+			}
 		}
-		
-		// 累积数据
-		receivedData = append(receivedData, req.Data...)
-	}
-	
-	// 调用存储服务上传分片
-	err := s.storage.UploadPart(stream.Context(), fileID, int(partNumber), receivedData, md5Str)
-	if err != nil {
+	}()
+
+	// ✅ 调用底层存储服务逻辑（边读边传到 MinIO）
+	if err := <-gotMetaCh; err != nil {
+		utils.Error("[UploadPart] 接收数据时发生错误: %v", err)
 		return err
 	}
-	
-	// 发送响应
+	err := s.storage.UploadPartStream(
+		stream.Context(),
+		fileID,
+		int(partNumber),
+		partSize,
+		reader,
+		md5Str,
+	)
+	if err != nil {
+		utils.Error("[UploadPart] 文件ID=%d 分片=%d 上传失败: %v", fileID, partNumber, err)
+		return err
+	}
+
+	// ✅ 通知客户端上传成功
+	utils.Info("[UploadPart] 文件ID=%d 分片=%d 上传完成", fileID, partNumber)
 	return stream.SendAndClose(&emptypb.Empty{})
 }
 
@@ -88,13 +130,13 @@ func (s *FileServiceServer) CompleteUpload(ctx context.Context, req *filepb.Comp
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 获取文件信息用于返回
 	file, err := s.storage.GetFileInfo(ctx, req.FileId)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &filepb.CompleteUploadResponse{
 		File: &filepb.FileInfo{
 			Id:     file.ID,

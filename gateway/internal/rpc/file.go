@@ -35,7 +35,7 @@ func NewFileServiceClient(serviceClient *ServiceClient) (*FileServiceClient, err
 		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                20 * time.Second, // 每20秒发送一次ping
-			Timeout:             3 * time.Second,  // ping超时时间
+			Timeout:             5 * time.Second,  // ping超时时间
 			PermitWithoutStream: true,             // 允许在没有活跃流时发送ping
 		}),
 		grpc.WithBlock(),
@@ -99,42 +99,60 @@ func (f *FileServiceClient) UploadPart(ctx context.Context, req *filepb.UploadPa
 	return stream.CloseAndRecv()
 }
 
-func (f *FileServiceClient) UploadPartStream(ctx context.Context, fileID int64, partNumber int32, reader io.Reader, partMD5 string) (*emptypb.Empty, error) {
-	// 超时控制
+func (f *FileServiceClient) UploadPartStream(
+	ctx context.Context,
+	fileID int64,
+	partNumber int32,
+	partSize int64,
+	reader io.Reader,
+	partMD5 string,
+) (*emptypb.Empty, error) {
+	// === 1️⃣ 超时控制 ===
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 60*time.Second)
 		defer cancel()
 	}
 
+	// === 2️⃣ 建立 gRPC 流 ===
 	stream, err := f.grpcClient.UploadPart(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("创建上传流失败: %v", err)
 	}
 
-	// 先发送元数据
-	metadata := &filepb.UploadPartRequest{
-		FileId:     fileID,
-		PartNumber: partNumber,
-		Md5:        partMD5,
-		Data:       []byte{}, // 空数据表示这是元数据消息
+	// === 3️⃣ 发送元数据 ===
+	metaMsg := &filepb.UploadPartRequest{
+		PartData: &filepb.UploadPartRequest_PartMetadata{
+			PartMetadata: &filepb.PartMetadata{
+				FileId:     fileID,
+				PartNumber: int64(partNumber),
+				Size:       partSize,
+				Md5:        partMD5,
+			},
+		},
 	}
 
-	if sendErr := stream.Send(metadata); sendErr != nil {
-		return nil, sendErr
+	if err := stream.Send(metaMsg); err != nil {
+		return nil, fmt.Errorf("发送元数据失败: %v", err)
 	}
 
-	// 然后发送数据流
-	buf := make([]byte, 512*1024) // 0.5MB
+	// === 4️⃣ 分块读取文件并发送数据 ===
+	buf := make([]byte, 512*1024) // 512KB 缓冲区
+	var total int64
+
 	for {
 		n, err := reader.Read(buf)
 		if n > 0 {
-			dataChunk := &filepb.UploadPartRequest{
-				Data: buf[:n],
+			total += int64(n)
+			dataMsg := &filepb.UploadPartRequest{
+				PartData: &filepb.UploadPartRequest_PartContent{
+					PartContent: &filepb.PartContent{
+						Data: buf[:n],
+					},
+				},
 			}
-
-			if sendErr := stream.Send(dataChunk); sendErr != nil {
-				return nil, sendErr
+			if err := stream.Send(dataMsg); err != nil {
+				return nil, fmt.Errorf("发送数据块失败: %v", err)
 			}
 		}
 
@@ -142,11 +160,20 @@ func (f *FileServiceClient) UploadPartStream(ctx context.Context, fileID int64, 
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("读取数据出错: %v", err)
 		}
 	}
 
-	return stream.CloseAndRecv()
+	// === 5️⃣ 关闭发送并等待响应 ===
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, fmt.Errorf("上传完成但等待响应失败: %v", err)
+	}
+
+	fmt.Printf("[UploadPartStream] 分片上传完成: fileID=%d, part=%d, size=%.2fMB\n",
+		fileID, partNumber, float64(total)/1024/1024)
+
+	return resp, nil
 }
 
 // CompleteUpload 完成上传
